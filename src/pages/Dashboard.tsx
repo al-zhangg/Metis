@@ -1,274 +1,265 @@
-import { supabase } from './supabaseClient';
-import { aiService } from './aiService';
-import type { Habit, JournalEntry, Quest, UserProfile } from './supabaseClient';
+import React, { useState, useEffect } from 'react';
+import { Home, Target, Flame, Plus } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import Card from '../components/Card';
+import Button from '../components/Button';
+import XPBar from '../components/XPBar';
+import HabitProgressAnalysis from '../components/HabitProgressAnalysis';
+import { enhancedApi } from '../services/enhancedApi';
+import { dailyTracker } from '../services/dailyTracker';
+import type { Habit, Quest } from '../services/supabaseClient';
 
-// Enhanced API service with AI integration
-class EnhancedApiService {
-  private userId: string = '1'; // Mock user ID for development
+const Dashboard: React.FC = () => {
+  const [habits, setHabits] = useState<Habit[]>([]);
+  const [quests, setQuests] = useState<Quest[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [completingHabit, setCompletingHabit] = useState<number | null>(null);
 
-  // Habit Management with AI Classification
-  async createHabit(habitData: {
-    title: string;
-    description: string;
-    icon: string;
-  }): Promise<{ success: boolean; habit?: Habit; error?: string }> {
-    try {
-      // Get AI classification
-      const classification = await aiService.classifyHabit(
-        habitData.title,
-        habitData.description
-      );
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [habitsData, questsData] = await Promise.all([
+          enhancedApi.getHabits(),
+          enhancedApi.getQuests()
+        ]);
+        setHabits(habitsData);
+        setQuests(questsData);
+      } catch (error) {
+        console.error('Failed to fetch dashboard data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-      const newHabit: Partial<Habit> = {
-        user_id: this.userId,
-        title: habitData.title,
-        description: habitData.description,
-        icon: habitData.icon,
-        category: classification.category,
-        difficulty: classification.difficulty,
-        suggested_frequency: classification.suggestedFrequency,
-        mythic_title: classification.mythicTitle,
-        wisdom: classification.wisdom,
-        current_streak: 0,
-        completion_rate: 0,
-        status: 'active',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
+    fetchData();
+  }, []);
 
-      // In a real app, this would save to Supabase
-      // const { data, error } = await supabase.from('habits').insert(newHabit).select().single();
-      
-      // Mock response for development
-      const mockHabit: Habit = {
-        id: Date.now(),
-        ...newHabit as Habit
-      };
-
-      return { success: true, habit: mockHabit };
-    } catch (error) {
-      console.error('Error creating habit:', error);
-      return { success: false, error: 'Failed to create habit' };
+  const handleCompleteHabit = async (habitId: number) => {
+    if (dailyTracker.isCompletedToday(habitId)) {
+      return; // Already completed today
     }
+
+    setCompletingHabit(habitId);
+    try {
+      const success = dailyTracker.markCompleted(habitId);
+      if (success) {
+        // Update the habits list to reflect completion
+        setHabits(prev => prev.map(habit => 
+          habit.id === habitId 
+            ? { ...habit, current_streak: dailyTracker.getStreak(habitId) }
+            : habit
+        ));
+      }
+    } catch (error) {
+      console.error('Failed to complete habit:', error);
+    } finally {
+      setCompletingHabit(null);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-marble via-slate-mist to-olympus-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-aegean-blue mx-auto mb-4"></div>
+          <p className="font-inter text-storm-gray">Loading your wisdom...</p>
+        </div>
+      </div>
+    );
   }
 
-  async getHabits(): Promise<Habit[]> {
-    try {
-      // In a real app: const { data } = await supabase.from('habits').select('*').eq('user_id', this.userId);
-      
-      // Mock data with AI-enhanced fields
-      return [
-        {
-          id: 1,
-          user_id: this.userId,
-          title: "Morning Meditation",
-          description: "Find inner peace like the ancient philosophers",
-          icon: "🧘‍♂️",
-          category: "mindfulness",
-          difficulty: "easy",
-          suggested_frequency: "daily",
-          mythic_title: "Path of the Serene Oracle",
-          wisdom: "In stillness, wisdom speaks loudest.",
-          current_streak: 7,
-          completion_rate: 85,
-          status: "active",
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        },
-        {
-          id: 2,
-          user_id: this.userId,
-          title: "Physical Training",
-          description: "Strengthen body and mind like Spartan warriors",
-          icon: "💪",
-          category: "health",
-          difficulty: "medium",
-          suggested_frequency: "daily",
-          mythic_title: "Forge of the Titan",
-          wisdom: "Strength grows in the crucible of discipline.",
-          current_streak: 12,
-          completion_rate: 92,
-          status: "active",
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        }
-      ];
-    } catch (error) {
-      console.error('Error fetching habits:', error);
-      return [];
-    }
-  }
+  const completedToday = habits.filter(habit => dailyTracker.isCompletedToday(habit.id)).length;
+  const totalHabits = habits.length;
 
-  async completeHabit(habitId: number): Promise<{ success: boolean; xpGained?: number }> {
-    try {
-      // In a real app, update the habit completion and streak
-      // Also trigger goal adjustment analysis
-      
-      return { success: true, xpGained: 25 };
-    } catch (error) {
-      console.error('Error completing habit:', error);
-      return { success: false };
-    }
-  }
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-marble via-slate-mist to-olympus-white">
+      {/* Hero Section */}
+      <div className="relative overflow-hidden">
+        <div 
+          className="h-64 bg-cover bg-center relative"
+          style={{
+            backgroundImage: `linear-gradient(rgba(59, 130, 246, 0.8), rgba(37, 99, 235, 0.8)), url('https://images.pexels.com/photos/8828489/pexels-photo-8828489.jpeg?auto=compress&cs=tinysrgb&w=1200')`
+          }}
+        >
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="text-center text-white">
+              <h1 className="font-cinzel font-bold text-4xl mb-4">
+                Welcome, Divine Warrior
+              </h1>
+              <p className="font-inter text-xl opacity-90">
+                Your journey to wisdom continues
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
 
-  // Journal Management with AI Insights
-  async createJournalEntry(entry: string): Promise<{ success: boolean; journalEntry?: JournalEntry; error?: string }> {
-    try {
-      // Get AI analysis
-      const insights = await aiService.analyzeJournal(entry);
+      <div className="max-w-6xl mx-auto p-6 -mt-16 relative z-10">
+        {/* XP Progress */}
+        <div className="mb-8">
+          <XPBar currentXP={1250} maxXP={2000} level={8} />
+        </div>
 
-      const newEntry: Partial<JournalEntry> = {
-        user_id: this.userId,
-        entry,
-        mood: insights.mood,
-        obstacles: insights.obstacles,
-        mythic_advice: insights.mythicAdvice,
-        oracle_title: insights.oracleTitle,
-        actionable_steps: insights.actionableSteps,
-        created_at: new Date().toISOString(),
-      };
+        {/* Daily Progress */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 border border-aegean-blue/20 shadow-lg text-center">
+            <div className="text-4xl mb-2">🎯</div>
+            <div className="font-cinzel font-semibold text-xl text-midnight mb-1">
+              Today's Progress
+            </div>
+            <div className="font-inter text-2xl text-aegean-blue font-bold">
+              {completedToday}/{totalHabits}
+            </div>
+          </div>
+          
+          <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 border border-aegean-blue/20 shadow-lg text-center">
+            <div className="text-4xl mb-2">🔥</div>
+            <div className="font-cinzel font-semibold text-xl text-midnight mb-1">
+              Longest Streak
+            </div>
+            <div className="font-inter text-2xl text-aegean-blue font-bold">
+              {Math.max(...habits.map(h => dailyTracker.getStreak(h.id)), 0)} days
+            </div>
+          </div>
+          
+          <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 border border-aegean-blue/20 shadow-lg text-center">
+            <div className="text-4xl mb-2">⚡</div>
+            <div className="font-cinzel font-semibold text-xl text-midnight mb-1">
+              Divine Energy
+            </div>
+            <div className="font-inter text-2xl text-aegean-blue font-bold">
+              {Math.round((completedToday / Math.max(totalHabits, 1)) * 100)}%
+            </div>
+          </div>
+        </div>
 
-      // Mock response
-      const mockEntry: JournalEntry = {
-        id: Date.now(),
-        ...newEntry as JournalEntry
-      };
+        {/* Today's Habits */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="font-cinzel font-semibold text-2xl text-midnight flex items-center gap-2">
+              <Home className="w-6 h-6 text-aegean-blue" />
+              Today's Quests
+            </h2>
+            <Link to="/add-habit">
+              <Button text="Add New Habit" onClick={() => {}} variant="secondary" />
+            </Link>
+          </div>
+          
+          {habits.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="text-6xl mb-4">🏛️</div>
+              <p className="font-inter text-storm-gray mb-4">
+                No habits yet. Begin your heroic journey!
+              </p>
+              <Link to="/add-habit">
+                <Button text="Create Your First Habit" onClick={() => {}} variant="primary" />
+              </Link>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {habits.map(habit => {
+                const isCompleted = dailyTracker.isCompletedToday(habit.id);
+                const currentStreak = dailyTracker.getStreak(habit.id);
+                const completionRate = dailyTracker.getCompletionRate(habit.id);
+                
+                return (
+                  <Card
+                    key={habit.id}
+                    title={habit.mythic_title || habit.title}
+                    description={habit.wisdom || habit.description}
+                    icon={habit.icon}
+                    status={isCompleted ? 'completed' : 'active'}
+                  >
+                    <div className="space-y-3">
+                      {/* Streak and completion info */}
+                      <div className="flex items-center justify-between text-sm">
+                        <div className="flex items-center gap-1">
+                          <Flame className="w-4 h-4 text-orange-500" />
+                          <span className="font-inter text-storm-gray">
+                            {currentStreak} day streak
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Target className="w-4 h-4 text-aegean-blue" />
+                          <span className="font-inter text-storm-gray">
+                            {completionRate}% rate
+                          </span>
+                        </div>
+                      </div>
+                      
+                      {/* Action button */}
+                      <Button
+                        text={
+                          isCompleted 
+                            ? "Completed Today ✓" 
+                            : completingHabit === habit.id 
+                              ? "Completing..." 
+                              : "Complete Quest"
+                        }
+                        onClick={() => handleCompleteHabit(habit.id)}
+                        variant={isCompleted ? "secondary" : "primary"}
+                        disabled={isCompleted || completingHabit === habit.id}
+                        className="w-full"
+                      />
+                      
+                      {/* Progress Analysis */}
+                      {currentStreak >= 3 && (
+                        <HabitProgressAnalysis
+                          habitId={habit.id}
+                          habitName={habit.title}
+                          currentStreak={currentStreak}
+                          completionRate={completionRate}
+                        />
+                      )}
+                    </div>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
+        </div>
 
-      return { success: true, journalEntry: mockEntry };
-    } catch (error) {
-      console.error('Error creating journal entry:', error);
-      return { success: false, error: 'Failed to create journal entry' };
-    }
-  }
+        {/* Divine Quests */}
+        <div>
+          <h2 className="font-cinzel font-semibold text-2xl text-midnight mb-6 flex items-center gap-2">
+            <Target className="w-6 h-6 text-aegean-blue" />
+            Divine Quests
+          </h2>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {quests.map(quest => (
+              <Card
+                key={quest.id}
+                title={quest.title}
+                description={quest.description}
+                icon="⚔️"
+                status={quest.status === 'completed' ? 'completed' : 'active'}
+              >
+                <div className="space-y-3">
+                  {/* Progress bar */}
+                  <div className="w-full bg-slate-mist rounded-full h-3">
+                    <div
+                      className="bg-gradient-to-r from-aegean-blue to-deep-aegean h-3 rounded-full transition-all duration-500"
+                      style={{ width: `${(quest.progress / quest.total) * 100}%` }}
+                    ></div>
+                  </div>
+                  
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="font-inter text-storm-gray">
+                      {quest.progress}/{quest.total} completed
+                    </span>
+                    <span className="font-inter font-semibold text-aegean-blue">
+                      +{quest.xp_reward} XP
+                    </span>
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
-  async getJournalEntries(): Promise<JournalEntry[]> {
-    try {
-      // Mock data with AI insights
-      return [
-        {
-          id: 1,
-          user_id: this.userId,
-          entry: "Today I reflected on Socrates' teaching that 'the unexamined life is not worth living.' This wisdom resonates deeply with my journey of self-improvement.",
-          mood: "positive",
-          obstacles: ["Self-doubt", "Time management"],
-          mythic_advice: "Like Athena's owl, wisdom comes to those who seek in darkness.",
-          oracle_title: "Wisdom of Self-Knowledge",
-          actionable_steps: ["Schedule daily reflection time", "Read one philosophical text weekly"],
-          created_at: new Date(Date.now() - 86400000).toISOString(),
-        },
-        {
-          id: 2,
-          user_id: this.userId,
-          entry: "Struggling with maintaining my habits lately. Perhaps this is a test, like the trials faced by heroes in ancient myths.",
-          mood: "mixed",
-          obstacles: ["Motivation", "Consistency"],
-          mythic_advice: "Even Hercules faced twelve labors; your trials forge strength.",
-          oracle_title: "The Hero's Challenge",
-          actionable_steps: ["Start with smallest habit", "Find accountability partner"],
-          created_at: new Date(Date.now() - 172800000).toISOString(),
-        }
-      ];
-    } catch (error) {
-      console.error('Error fetching journal entries:', error);
-      return [];
-    }
-  }
-
-  // Dynamic Quest Generation
-  async getQuests(): Promise<Quest[]> {
-    try {
-      // In a real app, these would be dynamically generated based on user behavior
-      return [
-        {
-          id: 1,
-          user_id: this.userId,
-          title: "Complete 5 habits today",
-          description: "Channel your inner Hercules",
-          type: "daily",
-          xp_reward: 50,
-          progress: 2,
-          total: 5,
-          status: "active",
-          created_at: new Date().toISOString(),
-        },
-        {
-          id: 2,
-          user_id: this.userId,
-          title: "Maintain 7-day streak",
-          description: "Persistence like Odysseus",
-          type: "weekly",
-          xp_reward: 100,
-          progress: 7,
-          total: 7,
-          status: "completed",
-          created_at: new Date().toISOString(),
-        }
-      ];
-    } catch (error) {
-      console.error('Error fetching quests:', error);
-      return [];
-    }
-  }
-
-  // Goal Adjustment Analysis
-  async analyzeHabitProgress(habitId: number): Promise<any> {
-    try {
-      // Get habit data and recent journal entries
-      const habits = await this.getHabits();
-      const habit = habits.find(h => h.id === habitId);
-      const journalEntries = await this.getJournalEntries();
-      
-      if (!habit) return null;
-
-      // Get AI recommendation
-      const adjustment = await aiService.suggestGoalAdjustment(
-        habit.title,
-        habit.current_streak,
-        habit.completion_rate,
-        journalEntries.map(e => e.entry).slice(0, 3)
-      );
-
-      return adjustment;
-    } catch (error) {
-      console.error('Error analyzing habit progress:', error);
-      return null;
-    }
-  }
-
-  // User Profile
-  async getUserProfile(): Promise<UserProfile | null> {
-    try {
-      // Mock profile data
-      return {
-        id: this.userId,
-        username: "PhilosopherWarrior",
-        current_xp: 1250,
-        level: 8,
-        total_habits: 15,
-        achievements: [
-          {
-            id: 1,
-            title: "Wisdom Seeker",
-            description: "Complete 10 meditation sessions",
-            icon: "🦉",
-            unlocked_at: "2024-01-10"
-          },
-          {
-            id: 2,
-            title: "Oracle's Insight",
-            description: "Write 20 journal entries",
-            icon: "📜",
-            unlocked_at: "2024-01-12"
-          }
-        ],
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
-    } catch (error) {
-      console.error('Error fetching user profile:', error);
-      return null;
-    }
-  }
-}
-
-export const enhancedApi = new EnhancedApiService();
+export default Dashboard;
