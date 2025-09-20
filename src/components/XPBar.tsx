@@ -1,274 +1,70 @@
-import { supabase } from './supabaseClient';
-import { aiService } from './aiService';
-import type { Habit, JournalEntry, Quest, UserProfile } from './supabaseClient';
+import React from 'react';
+import { Crown } from 'lucide-react';
 
-// Enhanced API service with AI integration
-class EnhancedApiService {
-  private userId: string = '1'; // Mock user ID for development
-
-  // Habit Management with AI Classification
-  async createHabit(habitData: {
-    title: string;
-    description: string;
-    icon: string;
-  }): Promise<{ success: boolean; habit?: Habit; error?: string }> {
-    try {
-      // Get AI classification
-      const classification = await aiService.classifyHabit(
-        habitData.title,
-        habitData.description
-      );
-
-      const newHabit: Partial<Habit> = {
-        user_id: this.userId,
-        title: habitData.title,
-        description: habitData.description,
-        icon: habitData.icon,
-        category: classification.category,
-        difficulty: classification.difficulty,
-        suggested_frequency: classification.suggestedFrequency,
-        mythic_title: classification.mythicTitle,
-        wisdom: classification.wisdom,
-        current_streak: 0,
-        completion_rate: 0,
-        status: 'active',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
-
-      // In a real app, this would save to Supabase
-      // const { data, error } = await supabase.from('habits').insert(newHabit).select().single();
-      
-      // Mock response for development
-      const mockHabit: Habit = {
-        id: Date.now(),
-        ...newHabit as Habit
-      };
-
-      return { success: true, habit: mockHabit };
-    } catch (error) {
-      console.error('Error creating habit:', error);
-      return { success: false, error: 'Failed to create habit' };
-    }
-  }
-
-  async getHabits(): Promise<Habit[]> {
-    try {
-      // In a real app: const { data } = await supabase.from('habits').select('*').eq('user_id', this.userId);
-      
-      // Mock data with AI-enhanced fields
-      return [
-        {
-          id: 1,
-          user_id: this.userId,
-          title: "Morning Meditation",
-          description: "Find inner peace like the ancient philosophers",
-          icon: "🧘‍♂️",
-          category: "mindfulness",
-          difficulty: "easy",
-          suggested_frequency: "daily",
-          mythic_title: "Path of the Serene Oracle",
-          wisdom: "In stillness, wisdom speaks loudest.",
-          current_streak: 7,
-          completion_rate: 85,
-          status: "active",
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        },
-        {
-          id: 2,
-          user_id: this.userId,
-          title: "Physical Training",
-          description: "Strengthen body and mind like Spartan warriors",
-          icon: "💪",
-          category: "health",
-          difficulty: "medium",
-          suggested_frequency: "daily",
-          mythic_title: "Forge of the Titan",
-          wisdom: "Strength grows in the crucible of discipline.",
-          current_streak: 12,
-          completion_rate: 92,
-          status: "active",
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        }
-      ];
-    } catch (error) {
-      console.error('Error fetching habits:', error);
-      return [];
-    }
-  }
-
-  async completeHabit(habitId: number): Promise<{ success: boolean; xpGained?: number }> {
-    try {
-      // In a real app, update the habit completion and streak
-      // Also trigger goal adjustment analysis
-      
-      return { success: true, xpGained: 25 };
-    } catch (error) {
-      console.error('Error completing habit:', error);
-      return { success: false };
-    }
-  }
-
-  // Journal Management with AI Insights
-  async createJournalEntry(entry: string): Promise<{ success: boolean; journalEntry?: JournalEntry; error?: string }> {
-    try {
-      // Get AI analysis
-      const insights = await aiService.analyzeJournal(entry);
-
-      const newEntry: Partial<JournalEntry> = {
-        user_id: this.userId,
-        entry,
-        mood: insights.mood,
-        obstacles: insights.obstacles,
-        mythic_advice: insights.mythicAdvice,
-        oracle_title: insights.oracleTitle,
-        actionable_steps: insights.actionableSteps,
-        created_at: new Date().toISOString(),
-      };
-
-      // Mock response
-      const mockEntry: JournalEntry = {
-        id: Date.now(),
-        ...newEntry as JournalEntry
-      };
-
-      return { success: true, journalEntry: mockEntry };
-    } catch (error) {
-      console.error('Error creating journal entry:', error);
-      return { success: false, error: 'Failed to create journal entry' };
-    }
-  }
-
-  async getJournalEntries(): Promise<JournalEntry[]> {
-    try {
-      // Mock data with AI insights
-      return [
-        {
-          id: 1,
-          user_id: this.userId,
-          entry: "Today I reflected on Socrates' teaching that 'the unexamined life is not worth living.' This wisdom resonates deeply with my journey of self-improvement.",
-          mood: "positive",
-          obstacles: ["Self-doubt", "Time management"],
-          mythic_advice: "Like Athena's owl, wisdom comes to those who seek in darkness.",
-          oracle_title: "Wisdom of Self-Knowledge",
-          actionable_steps: ["Schedule daily reflection time", "Read one philosophical text weekly"],
-          created_at: new Date(Date.now() - 86400000).toISOString(),
-        },
-        {
-          id: 2,
-          user_id: this.userId,
-          entry: "Struggling with maintaining my habits lately. Perhaps this is a test, like the trials faced by heroes in ancient myths.",
-          mood: "mixed",
-          obstacles: ["Motivation", "Consistency"],
-          mythic_advice: "Even Hercules faced twelve labors; your trials forge strength.",
-          oracle_title: "The Hero's Challenge",
-          actionable_steps: ["Start with smallest habit", "Find accountability partner"],
-          created_at: new Date(Date.now() - 172800000).toISOString(),
-        }
-      ];
-    } catch (error) {
-      console.error('Error fetching journal entries:', error);
-      return [];
-    }
-  }
-
-  // Dynamic Quest Generation
-  async getQuests(): Promise<Quest[]> {
-    try {
-      // In a real app, these would be dynamically generated based on user behavior
-      return [
-        {
-          id: 1,
-          user_id: this.userId,
-          title: "Complete 5 habits today",
-          description: "Channel your inner Hercules",
-          type: "daily",
-          xp_reward: 50,
-          progress: 2,
-          total: 5,
-          status: "active",
-          created_at: new Date().toISOString(),
-        },
-        {
-          id: 2,
-          user_id: this.userId,
-          title: "Maintain 7-day streak",
-          description: "Persistence like Odysseus",
-          type: "weekly",
-          xp_reward: 100,
-          progress: 7,
-          total: 7,
-          status: "completed",
-          created_at: new Date().toISOString(),
-        }
-      ];
-    } catch (error) {
-      console.error('Error fetching quests:', error);
-      return [];
-    }
-  }
-
-  // Goal Adjustment Analysis
-  async analyzeHabitProgress(habitId: number): Promise<any> {
-    try {
-      // Get habit data and recent journal entries
-      const habits = await this.getHabits();
-      const habit = habits.find(h => h.id === habitId);
-      const journalEntries = await this.getJournalEntries();
-      
-      if (!habit) return null;
-
-      // Get AI recommendation
-      const adjustment = await aiService.suggestGoalAdjustment(
-        habit.title,
-        habit.current_streak,
-        habit.completion_rate,
-        journalEntries.map(e => e.entry).slice(0, 3)
-      );
-
-      return adjustment;
-    } catch (error) {
-      console.error('Error analyzing habit progress:', error);
-      return null;
-    }
-  }
-
-  // User Profile
-  async getUserProfile(): Promise<UserProfile | null> {
-    try {
-      // Mock profile data
-      return {
-        id: this.userId,
-        username: "PhilosopherWarrior",
-        current_xp: 1250,
-        level: 8,
-        total_habits: 15,
-        achievements: [
-          {
-            id: 1,
-            title: "Wisdom Seeker",
-            description: "Complete 10 meditation sessions",
-            icon: "🦉",
-            unlocked_at: "2024-01-10"
-          },
-          {
-            id: 2,
-            title: "Oracle's Insight",
-            description: "Write 20 journal entries",
-            icon: "📜",
-            unlocked_at: "2024-01-12"
-          }
-        ],
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
-    } catch (error) {
-      console.error('Error fetching user profile:', error);
-      return null;
-    }
-  }
+interface XPBarProps {
+  currentXP: number;
+  maxXP: number;
+  level: number;
+  className?: string;
 }
 
-export const enhancedApi = new EnhancedApiService();
+const XPBar: React.FC<XPBarProps> = ({ currentXP, maxXP, level, className = '' }) => {
+  const percentage = Math.min((currentXP / maxXP) * 100, 100);
+  const nextLevelXP = maxXP - currentXP;
+
+  return (
+    <div className={`bg-white/80 backdrop-blur-sm rounded-xl p-6 border border-aegean-blue/20 shadow-lg ${className}`}>
+      {/* Level and XP info */}
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 bg-gradient-to-br from-gold to-bronze rounded-full flex items-center justify-center shadow-lg">
+            <Crown className="w-6 h-6 text-white" />
+          </div>
+          <div>
+            <h3 className="font-cinzel font-bold text-xl text-midnight">
+              Level {level}
+            </h3>
+            <p className="font-inter text-sm text-storm-gray">
+              Divine Warrior
+            </p>
+          </div>
+        </div>
+        <div className="text-right">
+          <p className="font-inter font-semibold text-midnight">
+            {currentXP.toLocaleString()} XP
+          </p>
+          <p className="font-inter text-sm text-storm-gray">
+            {nextLevelXP.toLocaleString()} to next level
+          </p>
+        </div>
+      </div>
+
+      {/* XP Progress Bar */}
+      <div className="relative">
+        <div className="w-full bg-slate-mist rounded-full h-4 shadow-inner">
+          <div
+            className="bg-gradient-to-r from-aegean-blue via-deep-aegean to-aegean-blue h-4 rounded-full
+                       transition-all duration-1000 ease-out shadow-lg relative overflow-hidden"
+            style={{ width: `${percentage}%` }}
+          >
+            {/* Animated shine effect */}
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent
+                           transform -skew-x-12 animate-pulse"></div>
+          </div>
+        </div>
+        
+        {/* Progress text */}
+        <div className="flex justify-between mt-2">
+          <span className="font-inter text-xs text-storm-gray">
+            {percentage.toFixed(1)}% Complete
+          </span>
+          <span className="font-inter text-xs text-storm-gray">
+            Level {level + 1}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default XPBar;
