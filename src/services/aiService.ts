@@ -1,274 +1,214 @@
-import { supabase } from './supabaseClient';
-import { aiService } from './aiService';
-import type { Habit, JournalEntry, Quest, UserProfile } from './supabaseClient';
+// AI Service for habit classification, journal analysis, and goal adjustments
+export interface HabitClassification {
+  category: string;
+  difficulty: 'easy' | 'medium' | 'hard';
+  suggestedFrequency: string;
+  mythicTitle: string;
+  wisdom: string;
+}
 
-// Enhanced API service with AI integration
-class EnhancedApiService {
-  private userId: string = '1'; // Mock user ID for development
+export interface JournalAnalysis {
+  mood: 'positive' | 'negative' | 'mixed' | 'neutral';
+  obstacles: string[];
+  mythicAdvice: string;
+  oracleTitle: string;
+  actionableSteps: string[];
+}
 
-  // Habit Management with AI Classification
-  async createHabit(habitData: {
-    title: string;
-    description: string;
-    icon: string;
-  }): Promise<{ success: boolean; habit?: Habit; error?: string }> {
-    try {
-      // Get AI classification
-      const classification = await aiService.classifyHabit(
-        habitData.title,
-        habitData.description
-      );
+export interface GoalAdjustment {
+  recommendation: string;
+  adjustedFrequency?: string;
+  motivationalMessage: string;
+  mythicGuidance: string;
+}
 
-      const newHabit: Partial<Habit> = {
-        user_id: this.userId,
-        title: habitData.title,
-        description: habitData.description,
-        icon: habitData.icon,
-        category: classification.category,
-        difficulty: classification.difficulty,
-        suggested_frequency: classification.suggestedFrequency,
-        mythic_title: classification.mythicTitle,
-        wisdom: classification.wisdom,
-        current_streak: 0,
-        completion_rate: 0,
-        status: 'active',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
+class AIService {
+  private apiUrl: string;
+  private apiKey: string;
 
-      // In a real app, this would save to Supabase
-      // const { data, error } = await supabase.from('habits').insert(newHabit).select().single();
-      
-      // Mock response for development
-      const mockHabit: Habit = {
-        id: Date.now(),
-        ...newHabit as Habit
-      };
-
-      return { success: true, habit: mockHabit };
-    } catch (error) {
-      console.error('Error creating habit:', error);
-      return { success: false, error: 'Failed to create habit' };
-    }
+  constructor() {
+    this.apiUrl = import.meta.env.VITE_AI_API_URL || '';
+    this.apiKey = import.meta.env.VITE_AI_API_KEY || '';
   }
 
-  async getHabits(): Promise<Habit[]> {
+  private async makeAIRequest(prompt: string): Promise<any> {
     try {
-      // In a real app: const { data } = await supabase.from('habits').select('*').eq('user_id', this.userId);
-      
-      // Mock data with AI-enhanced fields
-      return [
-        {
-          id: 1,
-          user_id: this.userId,
-          title: "Morning Meditation",
-          description: "Find inner peace like the ancient philosophers",
-          icon: "🧘‍♂️",
-          category: "mindfulness",
-          difficulty: "easy",
-          suggested_frequency: "daily",
-          mythic_title: "Path of the Serene Oracle",
-          wisdom: "In stillness, wisdom speaks loudest.",
-          current_streak: 7,
-          completion_rate: 85,
-          status: "active",
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
+      if (!this.apiUrl || !this.apiKey) {
+        console.warn('AI API not configured, using fallback response');
+        return this.getFallbackResponse(prompt);
+      }
+
+      const response = await fetch(this.apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.apiKey}`,
         },
-        {
-          id: 2,
-          user_id: this.userId,
-          title: "Physical Training",
-          description: "Strengthen body and mind like Spartan warriors",
-          icon: "💪",
-          category: "health",
-          difficulty: "medium",
-          suggested_frequency: "daily",
-          mythic_title: "Forge of the Titan",
-          wisdom: "Strength grows in the crucible of discipline.",
-          current_streak: 12,
-          completion_rate: 92,
-          status: "active",
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        }
-      ];
+        body: JSON.stringify({
+          model: 'llama3.1-8b',
+          messages: [
+            {
+              role: 'user',
+              content: prompt
+            }
+          ],
+          max_tokens: 500,
+          temperature: 0.7
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`AI API request failed with status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      return data.choices?.[0]?.message?.content || this.getFallbackResponse(prompt);
     } catch (error) {
-      console.error('Error fetching habits:', error);
-      return [];
+      console.error('AI Service Error:', error);
+      return this.getFallbackResponse(prompt);
     }
   }
 
-  async completeHabit(habitId: number): Promise<{ success: boolean; xpGained?: number }> {
+  private getFallbackResponse(prompt: string): string {
+    if (prompt.includes('classify habit')) {
+      return JSON.stringify({
+        category: 'personal_growth',
+        difficulty: 'medium',
+        suggestedFrequency: 'daily',
+        mythicTitle: 'Path of the Determined Hero',
+        wisdom: 'Every great journey begins with a single step.'
+      });
+    } else if (prompt.includes('analyze journal')) {
+      return JSON.stringify({
+        mood: 'positive',
+        obstacles: ['Time management', 'Motivation'],
+        mythicAdvice: 'Like Odysseus, your journey has challenges, but wisdom guides you home.',
+        oracleTitle: 'Seeker of Truth',
+        actionableSteps: ['Reflect daily', 'Set small goals', 'Celebrate progress']
+      });
+    } else if (prompt.includes('goal adjustment')) {
+      return JSON.stringify({
+        recommendation: 'Continue your current path with minor adjustments',
+        adjustedFrequency: 'daily',
+        motivationalMessage: 'Your dedication shows the spirit of a true hero.',
+        mythicGuidance: 'Like the phoenix, rise stronger from each challenge.'
+      });
+    }
+    return '{}';
+  }
+
+  async classifyHabit(title: string, description: string): Promise<HabitClassification> {
     try {
-      // In a real app, update the habit completion and streak
-      // Also trigger goal adjustment analysis
+      const prompt = `Classify this habit and provide mythic wisdom:
+Title: ${title}
+Description: ${description}
+
+Please respond with a JSON object containing:
+- category (string): one of "health", "mindfulness", "productivity", "learning", "social", "creative", "personal_growth"
+- difficulty (string): "easy", "medium", or "hard"
+- suggestedFrequency (string): "daily", "weekly", or "monthly"
+- mythicTitle (string): a heroic/mythological title for this habit
+- wisdom (string): a short inspirational quote related to this habit
+
+Respond only with valid JSON.`;
+
+      const response = await this.makeAIRequest(prompt);
+      const parsed = typeof response === 'string' ? JSON.parse(response) : response;
       
-      return { success: true, xpGained: 25 };
-    } catch (error) {
-      console.error('Error completing habit:', error);
-      return { success: false };
-    }
-  }
-
-  // Journal Management with AI Insights
-  async createJournalEntry(entry: string): Promise<{ success: boolean; journalEntry?: JournalEntry; error?: string }> {
-    try {
-      // Get AI analysis
-      const insights = await aiService.analyzeJournal(entry);
-
-      const newEntry: Partial<JournalEntry> = {
-        user_id: this.userId,
-        entry,
-        mood: insights.mood,
-        obstacles: insights.obstacles,
-        mythic_advice: insights.mythicAdvice,
-        oracle_title: insights.oracleTitle,
-        actionable_steps: insights.actionableSteps,
-        created_at: new Date().toISOString(),
-      };
-
-      // Mock response
-      const mockEntry: JournalEntry = {
-        id: Date.now(),
-        ...newEntry as JournalEntry
-      };
-
-      return { success: true, journalEntry: mockEntry };
-    } catch (error) {
-      console.error('Error creating journal entry:', error);
-      return { success: false, error: 'Failed to create journal entry' };
-    }
-  }
-
-  async getJournalEntries(): Promise<JournalEntry[]> {
-    try {
-      // Mock data with AI insights
-      return [
-        {
-          id: 1,
-          user_id: this.userId,
-          entry: "Today I reflected on Socrates' teaching that 'the unexamined life is not worth living.' This wisdom resonates deeply with my journey of self-improvement.",
-          mood: "positive",
-          obstacles: ["Self-doubt", "Time management"],
-          mythic_advice: "Like Athena's owl, wisdom comes to those who seek in darkness.",
-          oracle_title: "Wisdom of Self-Knowledge",
-          actionable_steps: ["Schedule daily reflection time", "Read one philosophical text weekly"],
-          created_at: new Date(Date.now() - 86400000).toISOString(),
-        },
-        {
-          id: 2,
-          user_id: this.userId,
-          entry: "Struggling with maintaining my habits lately. Perhaps this is a test, like the trials faced by heroes in ancient myths.",
-          mood: "mixed",
-          obstacles: ["Motivation", "Consistency"],
-          mythic_advice: "Even Hercules faced twelve labors; your trials forge strength.",
-          oracle_title: "The Hero's Challenge",
-          actionable_steps: ["Start with smallest habit", "Find accountability partner"],
-          created_at: new Date(Date.now() - 172800000).toISOString(),
-        }
-      ];
-    } catch (error) {
-      console.error('Error fetching journal entries:', error);
-      return [];
-    }
-  }
-
-  // Dynamic Quest Generation
-  async getQuests(): Promise<Quest[]> {
-    try {
-      // In a real app, these would be dynamically generated based on user behavior
-      return [
-        {
-          id: 1,
-          user_id: this.userId,
-          title: "Complete 5 habits today",
-          description: "Channel your inner Hercules",
-          type: "daily",
-          xp_reward: 50,
-          progress: 2,
-          total: 5,
-          status: "active",
-          created_at: new Date().toISOString(),
-        },
-        {
-          id: 2,
-          user_id: this.userId,
-          title: "Maintain 7-day streak",
-          description: "Persistence like Odysseus",
-          type: "weekly",
-          xp_reward: 100,
-          progress: 7,
-          total: 7,
-          status: "completed",
-          created_at: new Date().toISOString(),
-        }
-      ];
-    } catch (error) {
-      console.error('Error fetching quests:', error);
-      return [];
-    }
-  }
-
-  // Goal Adjustment Analysis
-  async analyzeHabitProgress(habitId: number): Promise<any> {
-    try {
-      // Get habit data and recent journal entries
-      const habits = await this.getHabits();
-      const habit = habits.find(h => h.id === habitId);
-      const journalEntries = await this.getJournalEntries();
-      
-      if (!habit) return null;
-
-      // Get AI recommendation
-      const adjustment = await aiService.suggestGoalAdjustment(
-        habit.title,
-        habit.current_streak,
-        habit.completion_rate,
-        journalEntries.map(e => e.entry).slice(0, 3)
-      );
-
-      return adjustment;
-    } catch (error) {
-      console.error('Error analyzing habit progress:', error);
-      return null;
-    }
-  }
-
-  // User Profile
-  async getUserProfile(): Promise<UserProfile | null> {
-    try {
-      // Mock profile data
       return {
-        id: this.userId,
-        username: "PhilosopherWarrior",
-        current_xp: 1250,
-        level: 8,
-        total_habits: 15,
-        achievements: [
-          {
-            id: 1,
-            title: "Wisdom Seeker",
-            description: "Complete 10 meditation sessions",
-            icon: "🦉",
-            unlocked_at: "2024-01-10"
-          },
-          {
-            id: 2,
-            title: "Oracle's Insight",
-            description: "Write 20 journal entries",
-            icon: "📜",
-            unlocked_at: "2024-01-12"
-          }
-        ],
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
+        category: parsed.category || 'personal_growth',
+        difficulty: parsed.difficulty || 'medium',
+        suggestedFrequency: parsed.suggestedFrequency || 'daily',
+        mythicTitle: parsed.mythicTitle || 'Path of the Determined Hero',
+        wisdom: parsed.wisdom || 'Every great journey begins with a single step.'
       };
     } catch (error) {
-      console.error('Error fetching user profile:', error);
-      return null;
+      console.error('Error classifying habit:', error);
+      return {
+        category: 'personal_growth',
+        difficulty: 'medium',
+        suggestedFrequency: 'daily',
+        mythicTitle: 'Path of the Determined Hero',
+        wisdom: 'Every great journey begins with a single step.'
+      };
+    }
+  }
+
+  async analyzeJournal(entry: string): Promise<JournalAnalysis> {
+    try {
+      const prompt = `Analyze this journal entry and provide mythic wisdom:
+Entry: ${entry}
+
+Please respond with a JSON object containing:
+- mood (string): "positive", "negative", "mixed", or "neutral"
+- obstacles (array): list of challenges mentioned or implied
+- mythicAdvice (string): wisdom in the style of ancient mythology
+- oracleTitle (string): a mystical title for the person based on their entry
+- actionableSteps (array): 2-3 specific actionable steps
+
+Respond only with valid JSON.`;
+
+      const response = await this.makeAIRequest(prompt);
+      const parsed = typeof response === 'string' ? JSON.parse(response) : response;
+      
+      return {
+        mood: parsed.mood || 'neutral',
+        obstacles: parsed.obstacles || ['Self-doubt'],
+        mythicAdvice: parsed.mythicAdvice || 'Like Odysseus, your journey has challenges, but wisdom guides you home.',
+        oracleTitle: parsed.oracleTitle || 'Seeker of Truth',
+        actionableSteps: parsed.actionableSteps || ['Reflect daily', 'Set small goals']
+      };
+    } catch (error) {
+      console.error('Error analyzing journal:', error);
+      return {
+        mood: 'neutral',
+        obstacles: ['Self-doubt'],
+        mythicAdvice: 'Like Odysseus, your journey has challenges, but wisdom guides you home.',
+        oracleTitle: 'Seeker of Truth',
+        actionableSteps: ['Reflect daily', 'Set small goals']
+      };
+    }
+  }
+
+  async suggestGoalAdjustment(
+    habitTitle: string,
+    currentStreak: number,
+    completionRate: number,
+    recentJournalEntries: string[]
+  ): Promise<GoalAdjustment> {
+    try {
+      const prompt = `Analyze this habit progress and suggest adjustments:
+Habit: ${habitTitle}
+Current Streak: ${currentStreak} days
+Completion Rate: ${completionRate}%
+Recent Journal Context: ${recentJournalEntries.join(' ')}
+
+Please respond with a JSON object containing:
+- recommendation (string): specific advice for improvement
+- adjustedFrequency (string): suggested frequency if changes needed
+- motivationalMessage (string): encouraging message
+- mythicGuidance (string): wisdom in mythological style
+
+Respond only with valid JSON.`;
+
+      const response = await this.makeAIRequest(prompt);
+      const parsed = typeof response === 'string' ? JSON.parse(response) : response;
+      
+      return {
+        recommendation: parsed.recommendation || 'Continue your current path with minor adjustments',
+        adjustedFrequency: parsed.adjustedFrequency,
+        motivationalMessage: parsed.motivationalMessage || 'Your dedication shows the spirit of a true hero.',
+        mythicGuidance: parsed.mythicGuidance || 'Like the phoenix, rise stronger from each challenge.'
+      };
+    } catch (error) {
+      console.error('Error suggesting goal adjustment:', error);
+      return {
+        recommendation: 'Continue your current path with minor adjustments',
+        motivationalMessage: 'Your dedication shows the spirit of a true hero.',
+        mythicGuidance: 'Like the phoenix, rise stronger from each challenge.'
+      };
     }
   }
 }
 
-export const enhancedApi = new EnhancedApiService();
+export const aiService = new AIService();
