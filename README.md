@@ -1,120 +1,67 @@
-# 🏛️ Metis - Greek Mythology Habit Tracker
+# Metis – Greek Mythology Habit Tracker
 
-A beautiful habit tracking application inspired by Greek mythology, built with React, TypeScript, and Tailwind CSS.
+## Project Description
+Metis is a gamified habit tracker inspired by Greek mythology. It helps users build lasting routines through quests, streaks, journaling, and AI-powered reflection. Designed with simplicity and mythology-inspired visuals, it combines structure with creativity.
 
-## 🚀 Quick Start
+## Table of Contents
+- [Features](#features)
+- [Installation](#installation)
+- [Usage](#usage)
+- [Roadmap](#roadmap)
+- [Contributing](#contributing)
+- [Contributors](#contributors)
+- [License](#license)
+- [Acknowledgments](#acknowledgments)
 
-Since Git is not available in the WebContainer environment, here's how to get your code to GitHub:
+## Features
+- Greek mythology–themed design with responsive UI  
+- Habit and task tracking with streaks and XP  
+- Daily and weekly quests with progression system  
+- Journaling with optional AI-powered insights  
+- Auth0 authentication for secure profiles  
+- Supabase integration for real-time data sync  
+- Extendable architecture for new features  
 
-### Method 1: Download and Upload (Recommended)
+## Installation
+1. Clone the repository  
+   git clone https://github.com/your-username/metis.git  
+   cd metis  
 
-1. **Download your project files:**
-   - Use the file explorer in Bolt to download individual files
-   - Or use the browser's download functionality
+2. Install dependencies  
+   npm install  
 
-2. **Create a new GitHub repository:**
-   - Go to https://github.com/new
-   - Name it `metis` or your preferred name
-   - Initialize with README (optional)
+3. Create a `.env` file in the root directory with the following variables:  
+   VITE_AUTH0_DOMAIN=your_auth0_domain  
+   VITE_AUTH0_CLIENT_ID=your_auth0_client_id  
+   VITE_SUPABASE_URL=your_supabase_url  
+   VITE_SUPABASE_ANON_KEY=your_supabase_key  
+   VITE_AI_API_URL=optional_ai_service_url  
+   VITE_AI_API_KEY=optional_ai_service_key  
 
-3. **Upload files to GitHub:**
-   - Use GitHub's web interface to upload files
-   - Or clone the repo locally and copy files
+4. Start the development server  
+   npm run dev  
 
-### Method 2: Copy-Paste Method
+5. Open the app in your browser at http://localhost:5173  
 
-1. **Create a new GitHub repository**
-2. **Copy file contents** from Bolt's file explorer
-3. **Create files manually** in GitHub's web interface
-4. **Paste the contents** into each file
+## Usage
+- Sign up or log in with Auth0 to create a profile  
+- Add habits, tasks, or routines  
+- Track streaks, earn XP, and complete quests  
+- Use the journal for daily reflection (AI insights optional)  
+- View progress through analytics and insights  
 
-## 📁 Important Files to Copy
+## Roadmap
+- Expand mythology-based achievement system  
+- Adaptive AI-driven habit recommendations  
+- Mobile-first optimizations  
+- Integrations with wearables and calendars  
 
-Make sure to copy these key files:
-- `src/` folder (entire directory)
-- `package.json`
-- `vite.config.ts`
-- `tailwind.config.js`
-- `tsconfig.json`
-- `index.html`
-- `.env.example` (rename to `.env` and add your credentials)
+## Contributors
+Built by **Team Metis** as a hackathon project.  
 
-## 🔧 Environment Setup
+## License
+This project is licensed under the MIT License.  
 
-After copying to GitHub, create a `.env` file with:
-
-```env
-# Auth0 Configuration
-VITE_AUTH0_DOMAIN=your_auth0_domain_here
-VITE_AUTH0_CLIENT_ID=your_auth0_client_id_here
-
-# For GitHub Codespaces, add these URL patterns to Auth0:
-# Callback URLs: https://*.github.dev, https://*.app.github.dev
-# Web Origins: https://*.github.dev, https://*.app.github.dev
-# Logout URLs: https://*.github.dev, https://*.app.github.dev
-
-# Supabase Configuration (Optional)
-VITE_SUPABASE_URL=your_supabase_url_here
-VITE_SUPABASE_ANON_KEY=your_supabase_anon_key_here
-
-# Note: If Supabase is not configured, the app will use mock data
-
-# AI Service Configuration (Optional)
-VITE_AI_API_URL=https://cloud.cerebras.ai/platform/org_k4n5ke4tjdk9xrdvrf8x88yc/apikeys
-VITE_AI_API_KEY=csk-kth6t92kwdpwvphtv35yvprp3hf3hxne4m3869drc2mtpe8r
-```
-
-## 🚀 GitHub Codespaces Setup
-
-If you're using GitHub Codespaces:
-
-1. **Get your Codespace URL** - it will look like `https://username-reponame-randomid.github.dev`
-2. **Configure Auth0**:
-   - Go to [Auth0 Dashboard](https://manage.auth0.com/dashboard)
-   - Select your application → Settings
-   - Add these to **Allowed Callback URLs**:
-     ```
-     https://*.github.dev,https://*.app.github.dev,http://localhost:3000
-     ```
-   - Add these to **Allowed Web Origins**:
-     ```
-     https://*.github.dev,https://*.app.github.dev,http://localhost:3000
-     ```
-   - Add these to **Allowed Logout URLs**:
-     ```
-     https://*.github.dev,https://*.app.github.dev,http://localhost:3000
-     ```
-   - Save changes
-3. **Create `.env` file** in your Codespace with your Auth0 credentials
-4. **Restart the dev server**: `npm run dev`
-
-## 🌐 GitHub Pages Deployment
-
-1. **Enable GitHub Pages** in your repository settings
-2. **Set source** to "GitHub Actions"
-3. **The workflow** will automatically deploy your app
-
-## ✨ Features
-
-- 🏛️ Greek mythology-themed design
-- 📊 Habit tracking with streaks and XP
-- 🔮 AI-powered journal insights
-- 🏆 Achievement system
-- 📱 Responsive design
-- 🔐 Auth0 authentication
-- 🗄️ Supabase database integration with real-time sync
-- 📈 Advanced analytics and progress tracking
-- 🎯 Dynamic quest system
-
-## 🛠️ Local Development
-
-```bash
-npm install
-npm run dev
-```
-
-## 📝 Notes
-
-- The app works with mock data if Supabase is not configured
-- Auth0 is required for authentication features
-- AI features have fallback responses if not configured
+## Acknowledgments
+- Inspired by Greek mythology and its stories of wisdom and discipline  
+- Thanks to the open-source community for frameworks and libraries  
