@@ -5,14 +5,14 @@ import type { Habit, JournalEntry, Quest, UserProfile } from './supabaseClient';
 
 // Enhanced API service with AI integration
 class EnhancedApiService {
+  private currentUser: any = null;
+
   private getCurrentUserId(): string | null {
-    // This will be set by the AuthContext when user is authenticated
-    const user = JSON.parse(localStorage.getItem('metis_current_user') || 'null');
-    return user?.id || null;
+    return this.currentUser?.sub || null;
   }
 
   setCurrentUser(user: any) {
-    localStorage.setItem('metis_current_user', JSON.stringify(user));
+    this.currentUser = user;
   }
 
   // Habit Management with AI Classification
@@ -45,10 +45,17 @@ class EnhancedApiService {
         updated_at: new Date().toISOString(),
       };
 
-      // In a real app, this would save to Supabase
-      // if (supabase) {
-      //   const { data, error } = await supabase.from('habits').insert(newHabit).select().single();
-      // }
+      // Save to Supabase if configured
+      if (isSupabaseConfigured() && supabase) {
+        const { data, error } = await supabase
+          .from('habits')
+          .insert(newHabit)
+          .select()
+          .single();
+        
+        if (error) throw error;
+        return { success: true, habit: data };
+      }
       
       // Mock response for development
       const mockHabit: Habit = {
@@ -70,7 +77,12 @@ class EnhancedApiService {
 
       // Use Supabase if configured, otherwise use mock data
       if (isSupabaseConfigured() && supabase) {
-        const { data, error } = await supabase.from('habits').select('*').eq('user_id', userId);
+        const { data, error } = await supabase
+          .from('habits')
+          .select('*')
+          .eq('user_id', userId)
+          .order('created_at', { ascending: false });
+          
         if (error) throw error;
         return data || [];
       }
@@ -121,16 +133,37 @@ class EnhancedApiService {
   async completeHabit(habitId: number): Promise<{ success: boolean; xpGained?: number }> {
     try {
       if (isSupabaseConfigured() && supabase) {
-        // Update habit in Supabase
-        const { error } = await supabase
+        // Get current habit data
+        const { data: habit, error: fetchError } = await supabase
           .from('habits')
-          .update({ 
-            current_streak: supabase!.raw('current_streak + 1'),
+          .select('current_streak, completion_rate')
+          .eq('id', habitId)
+          .single();
+          
+        if (fetchError) throw fetchError;
+        
+        // Update habit streak and completion rate
+        const { error: updateError } = await supabase
+          .from('habits')
+          .update({
+            current_streak: (habit?.current_streak || 0) + 1,
+            completion_rate: Math.min((habit?.completion_rate || 0) + 5, 100),
             updated_at: new Date().toISOString()
           })
           .eq('id', habitId);
         
-        if (error) throw error;
+        if (updateError) throw updateError;
+        
+        // Update user XP
+        const userId = this.getCurrentUserId();
+        if (userId) {
+          const { error: xpError } = await supabase.rpc('increment_user_xp', {
+            user_id: userId,
+            xp_amount: 25
+          });
+          
+          if (xpError) console.warn('Failed to update XP:', xpError);
+        }
       }
       
       return { success: true, xpGained: 25 };
@@ -157,7 +190,19 @@ class EnhancedApiService {
         created_at: new Date().toISOString(),
       };
 
-      // Mock response
+      // Save to Supabase if configured
+      if (isSupabaseConfigured() && supabase) {
+        const { data, error } = await supabase
+          .from('journal_entries')
+          .insert(newEntry)
+          .select()
+          .single();
+        
+        if (error) throw error;
+        return { success: true, journalEntry: data };
+      }
+      
+      // Mock response for development
       const mockEntry: JournalEntry = {
         id: Date.now(),
         ...newEntry as JournalEntry
@@ -175,6 +220,19 @@ class EnhancedApiService {
       const userId = this.getCurrentUserId();
       if (!userId) return [];
 
+      // Use Supabase if configured
+      if (isSupabaseConfigured() && supabase) {
+        const { data, error } = await supabase
+          .from('journal_entries')
+          .select('*')
+          .eq('user_id', userId)
+          .order('created_at', { ascending: false })
+          .limit(20);
+          
+        if (error) throw error;
+        return data || [];
+      }
+      
       // Mock data with AI insights
       return [
         {
@@ -212,6 +270,18 @@ class EnhancedApiService {
       const userId = this.getCurrentUserId();
       if (!userId) return [];
 
+      // Use Supabase if configured
+      if (isSupabaseConfigured() && supabase) {
+        const { data, error } = await supabase
+          .from('quests')
+          .select('*')
+          .eq('user_id', userId)
+          .order('created_at', { ascending: false });
+          
+        if (error) throw error;
+        return data || [];
+      }
+      
       // In a real app, these would be dynamically generated based on user behavior
       return [
         {
@@ -276,6 +346,18 @@ class EnhancedApiService {
       const userId = this.getCurrentUserId();
       if (!userId) return null;
 
+      // Use Supabase if configured
+      if (isSupabaseConfigured() && supabase) {
+        const { data, error } = await supabase
+          .from('user_profiles')
+          .select('*')
+          .eq('id', userId)
+          .single();
+          
+        if (error && error.code !== 'PGRST116') throw error;
+        return data;
+      }
+      
       // Mock profile data
       return {
         id: userId,

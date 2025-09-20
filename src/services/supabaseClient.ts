@@ -44,10 +44,10 @@ export interface JournalEntry {
   id: number;
   user_id: string;
   entry: string;
-  mood: string;
+  mood?: string;
   obstacles: string[];
-  mythic_advice: string;
-  oracle_title: string;
+  mythic_advice?: string;
+  oracle_title?: string;
   actionable_steps: string[];
   created_at: string;
 }

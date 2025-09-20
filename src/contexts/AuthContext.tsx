@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Auth0Provider, useAuth0 } from '@auth0/auth0-react';
 import { supabase, isSupabaseConfigured } from '../services/supabaseClient';
+import { enhancedApi } from '../services/enhancedApi';
 import type { UserProfile } from '../services/supabaseClient';
 
 interface AuthContextType {
@@ -154,12 +155,24 @@ const AuthProviderContent: React.FC<{
       if (auth0IsAuthenticated && auth0User) {
         try {
           setError(null);
+          
+          // Set current user in enhanced API
+          enhancedApi.setCurrentUser(auth0User);
+          
           // Try to get existing user profile
           let userProfile = await getUserProfile(auth0User.sub!);
           
           // If user doesn't exist, create new profile with defaults
           if (!userProfile) {
             userProfile = await createUserProfile(auth0User);
+          }
+          
+          // Update last login time
+          if (isSupabaseConfigured() && supabase && userProfile) {
+            await supabase
+              .from('user_profiles')
+              .update({ updated_at: new Date().toISOString() })
+              .eq('id', userProfile.id);
           }
           
           setUser(userProfile);
@@ -195,17 +208,22 @@ const AuthProviderContent: React.FC<{
 
   const getUserProfile = async (userId: string): Promise<UserProfile | null> => {
     if (isSupabaseConfigured() && supabase) {
-      const { data, error } = await supabase
-        .from('user_profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
-      
-      if (error && error.code !== 'PGRST116') { // PGRST116 = not found
-        throw error;
+      try {
+        const { data, error } = await supabase
+          .from('user_profiles')
+          .select('*')
+          .eq('id', userId)
+          .single();
+        
+        if (error && error.code !== 'PGRST116') { // PGRST116 = not found
+          throw error;
+        }
+        
+        return data;
+      } catch (error) {
+        console.error('Supabase getUserProfile error:', error);
+        return null;
       }
-      
-      return data;
     }
     
     // Mock storage for development
@@ -227,14 +245,21 @@ const AuthProviderContent: React.FC<{
     };
 
     if (isSupabaseConfigured() && supabase) {
-      const { data, error } = await supabase
-        .from('user_profiles')
-        .insert(newProfile)
-        .select()
-        .single();
-      
-      if (error) throw error;
-      return data;
+      try {
+        const { data, error } = await supabase
+          .from('user_profiles')
+          .upsert(newProfile, { onConflict: 'id' })
+          .select()
+          .single();
+        
+        if (error) throw error;
+        return data;
+      } catch (error) {
+        console.error('Supabase createUserProfile error:', error);
+        // Fall back to mock storage
+        localStorage.setItem(`metis_profile_${auth0User.sub}`, JSON.stringify(newProfile));
+        return newProfile;
+      }
     }
     
     // Mock storage for development

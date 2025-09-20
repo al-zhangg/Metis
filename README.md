@@ -57,6 +57,8 @@ VITE_AUTH0_CLIENT_ID=your_auth0_client_id_here
 VITE_SUPABASE_URL=your_supabase_url_here
 VITE_SUPABASE_ANON_KEY=your_supabase_anon_key_here
 
+# Note: If Supabase is not configured, the app will use mock data
+
 # AI Service Configuration (Optional)
 VITE_AI_API_URL=https://cloud.cerebras.ai/platform/org_k4n5ke4tjdk9xrdvrf8x88yc/apikeys
 VITE_AI_API_KEY=csk-kth6t92kwdpwvphtv35yvprp3hf3hxne4m3869drc2mtpe8r
@@ -100,7 +102,9 @@ If you're using GitHub Codespaces:
 - 🏆 Achievement system
 - 📱 Responsive design
 - 🔐 Auth0 authentication
-- 🗄️ Supabase database integration
+- 🗄️ Supabase database integration with real-time sync
+- 📈 Advanced analytics and progress tracking
+- 🎯 Dynamic quest system
 
 ## 🛠️ Local Development
 
