@@ -37,10 +37,20 @@ const AddHabit: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!formData.title || !formData.goal) {
+      console.error('Missing required fields');
+      return;
+    }
+    
     setIsSubmitting(true);
     
     try {
-      const result = await enhancedApi.createHabit(formData);
+      const result = await enhancedApi.createHabit({
+        title: formData.title,
+        description: formData.description || `${formData.goal} - ${formData.category}`,
+        icon: formData.icon
+      });
+      
       if (result.success) {
         setShowModal(true);
         setFormData({
@@ -50,6 +60,10 @@ const AddHabit: React.FC = () => {
           description: '',
           icon: '📚'
         });
+        setShowPreview(false);
+        setAiClassification(null);
+      } else {
+        console.error('Failed to create habit:', result.error);
       }
     } catch (error) {
       console.error('Failed to add habit:', error);
@@ -220,7 +234,7 @@ const AddHabit: React.FC = () => {
           <div className="flex gap-4">
             <Button
               text={isSubmitting ? "Creating..." : "Create Habit"}
-              onClick={() => {}}
+              onClick={handleSubmit}
               variant="primary"
               disabled={isSubmitting || !formData.title || !formData.goal}
               className="flex-1"

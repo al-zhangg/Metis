@@ -12,7 +12,9 @@ const Profile: React.FC = () => {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
+        console.log('Profile: Fetching profile data...');
         const profileData = await enhancedApi.getUserProfile();
+        console.log('Profile: Received data:', profileData);
         setProfile(profileData);
       } catch (error) {
         console.error('Failed to fetch profile:', error);
@@ -37,8 +39,21 @@ const Profile: React.FC = () => {
 
   if (!profile) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-marble to-amber-50 flex items-center justify-center">
-        <p className="font-inter text-gray-600">Failed to load profile</p>
+      <div className="min-h-screen bg-gradient-to-br from-marble to-amber-50 p-6">
+        <div className="max-w-4xl mx-auto">
+          <div className="bg-white rounded-xl shadow-lg p-8 border-2 border-bronze/20 text-center">
+            <div className="text-6xl mb-4">⚠️</div>
+            <h2 className="font-cinzel font-bold text-2xl text-midnight-blue mb-4">
+              Profile Not Available
+            </h2>
+            <p className="font-inter text-gray-600 mb-4">
+              Unable to load your profile. This might be due to authentication issues.
+            </p>
+            <p className="font-inter text-sm text-gray-500">
+              Try refreshing the page or logging out and back in.
+            </p>
+          </div>
+        </div>
       </div>
     );
   }

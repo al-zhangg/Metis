@@ -34,8 +34,12 @@ const Journal: React.FC = () => {
     try {
       const result = await enhancedApi.createJournalEntry(newEntry.trim());
       if (result.success) {
-        setEntries(prev => [result.journalEntry!, ...prev]);
+        if (result.journalEntry) {
+          setEntries(prev => [result.journalEntry!, ...prev]);
+        }
         setNewEntry('');
+      } else {
+        console.error('Failed to create journal entry:', result.error);
       }
     } catch (error) {
       console.error('Failed to add journal entry:', error);
@@ -57,8 +61,8 @@ const Journal: React.FC = () => {
     }
   };
 
-  const getSentimentEmoji = (sentiment: string) => {
-    switch (sentiment) {
+  const getSentimentEmoji = (mood: string) => {
+    switch (mood) {
       case 'positive':
         return '✨';
       case 'negative':
@@ -114,7 +118,7 @@ const Journal: React.FC = () => {
             <div className="flex justify-end">
               <Button
                 text={isSubmitting ? "Recording..." : "Record Wisdom"}
-                onClick={() => {}}
+                onClick={handleSubmit}
                 variant="primary"
                 disabled={isSubmitting || !newEntry.trim()}
               />
@@ -141,7 +145,7 @@ const Journal: React.FC = () => {
                   key={entry.id}
                   className={`
                     relative p-6 rounded-xl border-2 shadow-lg transform transition-all duration-300
-                    hover:scale-102 hover:shadow-xl ${getSentimentColor(entry.sentiment)}
+                    hover:scale-102 hover:shadow-xl ${getSentimentColor(entry.mood || entry.sentiment || 'neutral')}
                   `}
                   style={{
                     backgroundImage: `
@@ -153,9 +157,9 @@ const Journal: React.FC = () => {
                   {/* Oracle card header */}
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
-                      <span className="text-2xl">{getSentimentEmoji(entry.mood)}</span>
+                      <span className="text-2xl">{getSentimentEmoji(entry.mood || entry.sentiment || 'neutral')}</span>
                       <h3 className="font-cinzel font-semibold text-lg text-midnight-blue">
-                        {entry.oracle_title}
+                        {entry.oracle_title || 'Oracle\'s Wisdom'}
                       </h3>
                     </div>
                     <span className="font-inter text-sm text-gray-500">

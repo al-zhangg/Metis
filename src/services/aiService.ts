@@ -94,7 +94,13 @@ class AIService {
         mythicGuidance: 'Like the phoenix, rise stronger from each challenge.'
       });
     }
-    return '{}';
+    return JSON.stringify({
+      category: 'personal_growth',
+      difficulty: 'medium',
+      suggestedFrequency: 'daily',
+      mythicTitle: 'Path of the Determined Hero',
+      wisdom: 'Every great journey begins with a single step.'
+    });
   }
 
   async classifyHabit(title: string, description: string): Promise<HabitClassification> {
