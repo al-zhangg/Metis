@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { enhancedApi } from './services/enhancedApi';
 import Navigation from './components/Navigation';
 import Dashboard from './pages/Dashboard';
 import AddHabit from './pages/AddHabit';
@@ -9,7 +10,14 @@ import Profile from './pages/Profile';
 import Auth from './pages/Auth';
 
 const AppContent: React.FC = () => {
-  const { user, loading } = useAuth();
+  const { user, loading, isAuthenticated } = useAuth();
+
+  // Set current user in API service when user changes
+  React.useEffect(() => {
+    if (user) {
+      enhancedApi.setCurrentUser(user);
+    }
+  }, [user]);
 
   if (loading) {
     return (
@@ -22,7 +30,7 @@ const AppContent: React.FC = () => {
     );
   }
 
-  if (!user) {
+  if (!isAuthenticated || !user) {
     return <Auth />;
   }
 

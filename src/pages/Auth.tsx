@@ -1,50 +1,26 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Navigate } from 'react-router-dom';
-import { Crown, Sparkles, Shield, Scroll } from 'lucide-react';
+import { Crown, Sparkles, Shield, Scroll, LogIn } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import Button from '../components/Button';
 
 const Auth: React.FC = () => {
-  const { user, login, signup } = useAuth();
-  const [isLogin, setIsLogin] = useState(true);
-  const [formData, setFormData] = useState({
-    username: '',
-    email: '',
-    password: ''
-  });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const { user, login, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <p className="font-inter text-slate-600">Connecting to the Oracle...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (user) {
     return <Navigate to="/" replace />;
   }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
-
-    try {
-      const result = isLogin 
-        ? await login(formData.email, formData.password)
-        : await signup(formData.username, formData.email, formData.password);
-
-      if (!result.success) {
-        setError(result.error || 'Authentication failed');
-      }
-    } catch (err) {
-      setError('An unexpected error occurred');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData(prev => ({
-      ...prev,
-      [e.target.name]: e.target.value
-    }));
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex items-center justify-center p-6">
@@ -98,111 +74,55 @@ const Auth: React.FC = () => {
           </div>
         </div>
 
-        {/* Auth Form */}
+        {/* Auth Card */}
         <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-8 border border-slate-200">
-          <div className="flex mb-6">
-            <button
-              type="button"
-              onClick={() => setIsLogin(true)}
-              className={`flex-1 py-2 px-4 rounded-lg font-inter font-medium transition-all duration-200 ${
-                isLogin 
-                  ? 'bg-blue-500 text-white shadow-md' 
-                  : 'text-slate-600 hover:bg-slate-100'
-              }`}
-            >
-              Sign In
-            </button>
-            <button
-              type="button"
-              onClick={() => setIsLogin(false)}
-              className={`flex-1 py-2 px-4 rounded-lg font-inter font-medium transition-all duration-200 ${
-                !isLogin 
-                  ? 'bg-blue-500 text-white shadow-md' 
-                  : 'text-slate-600 hover:bg-slate-100'
-              }`}
-            >
-              Sign Up
-            </button>
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {!isLogin && (
-              <div>
-                <label htmlFor="username" className="block font-inter font-medium text-slate-700 mb-2">
-                  Username
-                </label>
-                <input
-                  type="text"
-                  id="username"
-                  name="username"
-                  value={formData.username}
-                  onChange={handleInputChange}
-                  required={!isLogin}
-                  className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 font-inter transition-colors"
-                  placeholder="Choose your hero name"
-                />
-              </div>
-            )}
-
-            <div>
-              <label htmlFor="email" className="block font-inter font-medium text-slate-700 mb-2">
-                Email
-              </label>
-              <input
-                type="email"
-                id="email"
-                name="email"
-                value={formData.email}
-                onChange={handleInputChange}
-                required
-                className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 font-inter transition-colors"
-                placeholder="your.email@olympus.com"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="password" className="block font-inter font-medium text-slate-700 mb-2">
-                Password
-              </label>
-              <input
-                type="password"
-                id="password"
-                name="password"
-                value={formData.password}
-                onChange={handleInputChange}
-                required
-                className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 font-inter transition-colors"
-                placeholder="Enter your secret"
-              />
-            </div>
-
-            {error && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                <p className="font-inter text-sm text-red-600">{error}</p>
-              </div>
-            )}
-
-            <Button
-              text={loading ? "Authenticating..." : (isLogin ? "Enter the Realm" : "Begin Your Journey")}
-              onClick={() => {}}
-              variant="primary"
-              disabled={loading}
-              className="w-full"
-            />
-          </form>
-
-          <div className="mt-6 text-center">
-            <p className="font-inter text-sm text-slate-500">
-              {isLogin ? "New to Metis?" : "Already have an account?"}
-              <button
-                type="button"
-                onClick={() => setIsLogin(!isLogin)}
-                className="ml-1 text-blue-600 hover:text-blue-700 font-medium"
-              >
-                {isLogin ? "Create Account" : "Sign In"}
-              </button>
+          <div className="text-center mb-6">
+            <LogIn className="w-12 h-12 text-blue-500 mx-auto mb-4" />
+            <h2 className="font-cinzel font-semibold text-2xl text-slate-800 mb-2">
+              Enter the Realm
+            </h2>
+            <p className="font-inter text-slate-600">
+              Sign in with your secure Auth0 account to begin your journey of wisdom and self-improvement.
             </p>
           </div>
+
+          <Button
+            text="Sign In / Create Account"
+            onClick={login}
+            variant="primary"
+            className="w-full mb-4"
+          />
+
+          <div className="text-center">
+            <p className="font-inter text-xs text-slate-500">
+              🔒 Secure authentication powered by Auth0
+            </p>
+          </div>
+        </div>
+
+        {/* Info Section */}
+        <div className="mt-6 bg-white/60 backdrop-blur-sm rounded-xl p-6 border border-slate-200">
+          <h3 className="font-cinzel font-semibold text-lg text-slate-800 mb-3">
+            New User Benefits:
+          </h3>
+          <ul className="space-y-2 font-inter text-sm text-slate-600">
+            <li className="flex items-center gap-2">
+              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+              Start at Level 1 with 0 XP
+            </li>
+            <li className="flex items-center gap-2">
+              <div className="w-2 h-2 bg-indigo-500 rounded-full"></div>
+              Clean slate for habit tracking
+            </li>
+            <li className="flex items-center gap-2">
+              <div className="w-2 h-2 bg-slate-500 rounded-full"></div>
+              Personalized Oracle journal
+            </li>
+            <li className="flex items-center gap-2">
+              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+              Achievement system unlocked
+            </li>
+          </ul>
         </div>
 
         {/* Footer */}

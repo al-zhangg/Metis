@@ -68,6 +68,7 @@ export interface Quest {
 export interface UserProfile {
   id: string;
   username: string;
+  email: string;
   current_xp: number;
   level: number;
   total_habits: number;

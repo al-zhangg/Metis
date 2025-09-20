@@ -5,7 +5,15 @@ import type { Habit, JournalEntry, Quest, UserProfile } from './supabaseClient';
 
 // Enhanced API service with AI integration
 class EnhancedApiService {
-  private userId: string = '1'; // Mock user ID for development
+  private getCurrentUserId(): string | null {
+    // This will be set by the AuthContext when user is authenticated
+    const user = JSON.parse(localStorage.getItem('metis_current_user') || 'null');
+    return user?.id || null;
+  }
+
+  setCurrentUser(user: any) {
+    localStorage.setItem('metis_current_user', JSON.stringify(user));
+  }
 
   // Habit Management with AI Classification
   async createHabit(habitData: {
@@ -21,7 +29,7 @@ class EnhancedApiService {
       );
 
       const newHabit: Partial<Habit> = {
-        user_id: this.userId,
+        user_id: this.getCurrentUserId() || 'anonymous',
         title: habitData.title,
         description: habitData.description,
         icon: habitData.icon,
@@ -57,9 +65,12 @@ class EnhancedApiService {
 
   async getHabits(): Promise<Habit[]> {
     try {
+      const userId = this.getCurrentUserId();
+      if (!userId) return [];
+
       // Use Supabase if configured, otherwise use mock data
       if (isSupabaseConfigured() && supabase) {
-        const { data, error } = await supabase.from('habits').select('*').eq('user_id', this.userId);
+        const { data, error } = await supabase.from('habits').select('*').eq('user_id', userId);
         if (error) throw error;
         return data || [];
       }
@@ -68,7 +79,7 @@ class EnhancedApiService {
       return [
         {
           id: 1,
-          user_id: this.userId,
+          user_id: userId,
           title: "Morning Meditation",
           description: "Find inner peace like the ancient philosophers",
           icon: "🧘‍♂️",
@@ -85,7 +96,7 @@ class EnhancedApiService {
         },
         {
           id: 2,
-          user_id: this.userId,
+          user_id: userId,
           title: "Physical Training",
           description: "Strengthen body and mind like Spartan warriors",
           icon: "💪",
@@ -136,7 +147,7 @@ class EnhancedApiService {
       const insights = await aiService.analyzeJournal(entry);
 
       const newEntry: Partial<JournalEntry> = {
-        user_id: this.userId,
+        user_id: this.getCurrentUserId() || 'anonymous',
         entry,
         mood: insights.mood,
         obstacles: insights.obstacles,
@@ -161,11 +172,14 @@ class EnhancedApiService {
 
   async getJournalEntries(): Promise<JournalEntry[]> {
     try {
+      const userId = this.getCurrentUserId();
+      if (!userId) return [];
+
       // Mock data with AI insights
       return [
         {
           id: 1,
-          user_id: this.userId,
+          user_id: userId,
           entry: "Today I reflected on Socrates' teaching that 'the unexamined life is not worth living.' This wisdom resonates deeply with my journey of self-improvement.",
           mood: "positive",
           obstacles: ["Self-doubt", "Time management"],
@@ -176,7 +190,7 @@ class EnhancedApiService {
         },
         {
           id: 2,
-          user_id: this.userId,
+          user_id: userId,
           entry: "Struggling with maintaining my habits lately. Perhaps this is a test, like the trials faced by heroes in ancient myths.",
           mood: "mixed",
           obstacles: ["Motivation", "Consistency"],
@@ -195,11 +209,14 @@ class EnhancedApiService {
   // Dynamic Quest Generation
   async getQuests(): Promise<Quest[]> {
     try {
+      const userId = this.getCurrentUserId();
+      if (!userId) return [];
+
       // In a real app, these would be dynamically generated based on user behavior
       return [
         {
           id: 1,
-          user_id: this.userId,
+          user_id: userId,
           title: "Complete 5 habits today",
           description: "Channel your inner Hercules",
           type: "daily",
@@ -211,7 +228,7 @@ class EnhancedApiService {
         },
         {
           id: 2,
-          user_id: this.userId,
+          user_id: userId,
           title: "Maintain 7-day streak",
           description: "Persistence like Odysseus",
           type: "weekly",
@@ -256,10 +273,14 @@ class EnhancedApiService {
   // User Profile
   async getUserProfile(): Promise<UserProfile | null> {
     try {
+      const userId = this.getCurrentUserId();
+      if (!userId) return null;
+
       // Mock profile data
       return {
-        id: this.userId,
+        id: userId,
         username: "PhilosopherWarrior",
+        email: "user@example.com",
         current_xp: 1250,
         level: 8,
         total_habits: 15,
