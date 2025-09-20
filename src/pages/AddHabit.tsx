@@ -2,7 +2,9 @@ import React, { useState } from 'react';
 import { Plus } from 'lucide-react';
 import Button from '../components/Button';
 import Modal from '../components/Modal';
-import { addHabit } from '../services/mockApi';
+import AIInsightCard from '../components/AIInsightCard';
+import { enhancedApi } from '../services/enhancedApi';
+import type { HabitClassification } from '../services/aiService';
 
 const AddHabit: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -14,6 +16,8 @@ const AddHabit: React.FC = () => {
   });
   const [showModal, setShowModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [aiClassification, setAiClassification] = useState<HabitClassification | null>(null);
+  const [showPreview, setShowPreview] = useState(false);
 
   const categories = [
     'Wisdom', 'Strength', 'Knowledge', 'Health', 'Creativity', 'Spirituality'
@@ -36,7 +40,7 @@ const AddHabit: React.FC = () => {
     setIsSubmitting(true);
     
     try {
-      const result = await addHabit(1, formData);
+      const result = await enhancedApi.createHabit(formData);
       if (result.success) {
         setShowModal(true);
         setFormData({
@@ -54,6 +58,22 @@ const AddHabit: React.FC = () => {
     }
   };
 
+  const handlePreviewHabit = async () => {
+    if (!formData.title || !formData.description) return;
+    
+    setIsSubmitting(true);
+    try {
+      // Get AI classification preview
+      const { aiService } = await import('../services/aiService');
+      const classification = await aiService.classifyHabit(formData.title, formData.description);
+      setAiClassification(classification);
+      setShowPreview(true);
+    } catch (error) {
+      console.error('Failed to get AI preview:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
   return (
     <div className="min-h-screen bg-gradient-to-br from-marble to-amber-50 p-6">
       <div className="max-w-2xl mx-auto">
@@ -165,6 +185,38 @@ const AddHabit: React.FC = () => {
             />
           </div>
 
+          {/* AI Preview Button */}
+          {formData.title && formData.description && !showPreview && (
+            <div className="mb-6">
+              <Button
+                text={isSubmitting ? "Getting AI Insights..." : "Preview with AI"}
+                onClick={handlePreviewHabit}
+                variant="secondary"
+                disabled={isSubmitting}
+                className="w-full"
+              />
+            </div>
+          )}
+
+          {/* AI Classification Preview */}
+          {showPreview && aiClassification && (
+            <div className="mb-6 space-y-4">
+              <h3 className="font-cinzel font-semibold text-lg text-midnight-blue">
+                AI Analysis Preview
+              </h3>
+              
+              <AIInsightCard
+                type="analysis"
+                title={aiClassification.mythicTitle}
+                content={aiClassification.wisdom}
+                actionableSteps={[
+                  `Category: ${aiClassification.category}`,
+                  `Difficulty: ${aiClassification.difficulty}`,
+                  `Suggested frequency: ${aiClassification.suggestedFrequency}`
+                ]}
+              />
+            </div>
+          )}
           <div className="flex gap-4">
             <Button
               text={isSubmitting ? "Creating..." : "Create Habit"}
@@ -173,6 +225,17 @@ const AddHabit: React.FC = () => {
               disabled={isSubmitting || !formData.title || !formData.goal}
               className="flex-1"
             />
+            {showPreview && (
+              <Button
+                text="Edit Details"
+                onClick={() => {
+                  setShowPreview(false);
+                  setAiClassification(null);
+                }}
+                variant="secondary"
+                className="flex-1"
+              />
+            )}
           </div>
         </form>
 
@@ -184,6 +247,16 @@ const AddHabit: React.FC = () => {
         >
           <div className="text-center">
             <div className="text-6xl mb-4">{formData.icon}</div>
+            {aiClassification && (
+              <div className="mb-4">
+                <h4 className="font-cinzel font-semibold text-bronze mb-2">
+                  {aiClassification.mythicTitle}
+                </h4>
+                <p className="font-inter text-sm text-gray-600">
+                  {aiClassification.wisdom}
+                </p>
+              </div>
+            )}
             <p className="font-inter text-gray-700 mb-6">
               Your new habit has been forged! May it bring you wisdom and strength on your journey.
             </p>

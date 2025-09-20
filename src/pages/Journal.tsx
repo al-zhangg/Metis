@@ -1,15 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { BookOpen, Feather } from 'lucide-react';
+import { BookOpen, Feather, Sparkles } from 'lucide-react';
 import Button from '../components/Button';
-import { getJournals, addJournalEntry } from '../services/mockApi';
-
-interface JournalEntry {
-  id: number;
-  entry: string;
-  sentiment: 'positive' | 'neutral' | 'negative';
-  timestamp: string;
-  oracleTitle: string;
-}
+import AIInsightCard from '../components/AIInsightCard';
+import { enhancedApi } from '../services/enhancedApi';
+import type { JournalEntry } from '../services/supabaseClient';
 
 const Journal: React.FC = () => {
   const [entries, setEntries] = useState<JournalEntry[]>([]);
@@ -20,7 +14,7 @@ const Journal: React.FC = () => {
   useEffect(() => {
     const fetchEntries = async () => {
       try {
-        const journalData = await getJournals(1);
+        const journalData = await enhancedApi.getJournalEntries();
         setEntries(journalData);
       } catch (error) {
         console.error('Failed to fetch journal entries:', error);
@@ -38,9 +32,9 @@ const Journal: React.FC = () => {
 
     setIsSubmitting(true);
     try {
-      const result = await addJournalEntry(1, newEntry.trim());
+      const result = await enhancedApi.createJournalEntry(newEntry.trim());
       if (result.success) {
-        setEntries(prev => [result.entry, ...prev]);
+        setEntries(prev => [result.journalEntry!, ...prev]);
         setNewEntry('');
       }
     } catch (error) {
@@ -56,6 +50,8 @@ const Journal: React.FC = () => {
         return 'border-laurel-green bg-green-50';
       case 'negative':
         return 'border-red-400 bg-red-50';
+      case 'mixed':
+        return 'border-purple-400 bg-purple-50';
       default:
         return 'border-bronze bg-amber-50';
     }
@@ -67,6 +63,8 @@ const Journal: React.FC = () => {
         return '✨';
       case 'negative':
         return '🌧️';
+      case 'mixed':
+        return '🌓';
       default:
         return '🔮';
     }
@@ -155,13 +153,13 @@ const Journal: React.FC = () => {
                   {/* Oracle card header */}
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
-                      <span className="text-2xl">{getSentimentEmoji(entry.sentiment)}</span>
+                      <span className="text-2xl">{getSentimentEmoji(entry.mood)}</span>
                       <h3 className="font-cinzel font-semibold text-lg text-midnight-blue">
-                        {entry.oracleTitle}
+                        {entry.oracle_title}
                       </h3>
                     </div>
                     <span className="font-inter text-sm text-gray-500">
-                      {new Date(entry.timestamp).toLocaleDateString()}
+                      {new Date(entry.created_at).toLocaleDateString()}
                     </span>
                   </div>
                   
@@ -169,6 +167,59 @@ const Journal: React.FC = () => {
                   <p className="font-inter text-gray-700 leading-relaxed">
                     {entry.entry}
                   </p>
+                  
+                  {/* AI Insights */}
+                  <div className="mt-4 space-y-3">
+                    {/* Mythic Advice */}
+                    <div className="bg-white/50 rounded-lg p-3">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Sparkles className="w-4 h-4 text-amber-500" />
+                        <span className="font-cinzel font-semibold text-sm text-midnight-blue">
+                          Oracle's Wisdom
+                        </span>
+                      </div>
+                      <p className="font-inter text-sm text-gray-700 italic">
+                        "{entry.mythic_advice}"
+                      </p>
+                    </div>
+                    
+                    {/* Obstacles & Action Steps */}
+                    {(entry.obstacles.length > 0 || entry.actionable_steps.length > 0) && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {entry.obstacles.length > 0 && (
+                          <div className="bg-white/50 rounded-lg p-3">
+                            <h5 className="font-inter font-semibold text-xs text-gray-600 uppercase tracking-wide mb-2">
+                              Challenges Identified
+                            </h5>
+                            <ul className="space-y-1">
+                              {entry.obstacles.map((obstacle, idx) => (
+                                <li key={idx} className="font-inter text-xs text-gray-700 flex items-center gap-1">
+                                  <span className="w-1 h-1 bg-red-400 rounded-full"></span>
+                                  {obstacle}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        
+                        {entry.actionable_steps.length > 0 && (
+                          <div className="bg-white/50 rounded-lg p-3">
+                            <h5 className="font-inter font-semibold text-xs text-gray-600 uppercase tracking-wide mb-2">
+                              Next Steps
+                            </h5>
+                            <ul className="space-y-1">
+                              {entry.actionable_steps.map((step, idx) => (
+                                <li key={idx} className="font-inter text-xs text-gray-700 flex items-center gap-1">
+                                  <span className="w-1 h-1 bg-green-400 rounded-full"></span>
+                                  {step}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
                   
                   {/* Decorative elements */}
                   <div className="absolute top-2 right-2 w-3 h-3 bg-bronze/20 rounded-full"></div>

@@ -2,34 +2,17 @@ import React, { useState, useEffect } from 'react';
 import { User, Trophy, Crown } from 'lucide-react';
 import XPBar from '../components/XPBar';
 import Card from '../components/Card';
-import { getProfile } from '../services/mockApi';
-
-interface Achievement {
-  id: number;
-  title: string;
-  description: string;
-  icon: string;
-  unlockedAt: string;
-}
-
-interface ProfileData {
-  id: number;
-  username: string;
-  currentXP: number;
-  maxXP: number;
-  level: number;
-  totalHabits: number;
-  achievementsUnlocked: Achievement[];
-}
+import { enhancedApi } from '../services/enhancedApi';
+import type { UserProfile } from '../services/supabaseClient';
 
 const Profile: React.FC = () => {
-  const [profile, setProfile] = useState<ProfileData | null>(null);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const profileData = await getProfile(1);
+        const profileData = await enhancedApi.getUserProfile();
         setProfile(profileData);
       } catch (error) {
         console.error('Failed to fetch profile:', error);
@@ -86,7 +69,7 @@ const Profile: React.FC = () => {
               <div className="grid grid-cols-2 gap-4 text-center">
                 <div className="bg-marble rounded-lg p-3">
                   <div className="font-cinzel font-semibold text-2xl text-bronze">
-                    {profile.totalHabits}
+                    {profile.total_habits}
                   </div>
                   <div className="font-inter text-sm text-gray-600">
                     Habits Forged
@@ -94,7 +77,7 @@ const Profile: React.FC = () => {
                 </div>
                 <div className="bg-marble rounded-lg p-3">
                   <div className="font-cinzel font-semibold text-2xl text-bronze">
-                    {profile.achievementsUnlocked.length}
+                    {profile.achievements.length}
                   </div>
                   <div className="font-inter text-sm text-gray-600">
                     Achievements
@@ -106,8 +89,8 @@ const Profile: React.FC = () => {
 
           {/* XP Progress */}
           <XPBar
-            currentXP={profile.currentXP}
-            maxXP={profile.maxXP}
+            currentXP={profile.current_xp}
+            maxXP={2000}
             level={profile.level}
           />
         </div>
@@ -119,7 +102,7 @@ const Profile: React.FC = () => {
             Unlocked Achievements
           </h2>
           
-          {profile.achievementsUnlocked.length === 0 ? (
+          {profile.achievements.length === 0 ? (
             <div className="text-center py-12">
               <div className="text-6xl mb-4">🏆</div>
               <p className="font-inter text-gray-600">
@@ -128,7 +111,7 @@ const Profile: React.FC = () => {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {profile.achievementsUnlocked.map(achievement => (
+              {profile.achievements.map(achievement => (
                 <Card
                   key={achievement.id}
                   title={achievement.title}
@@ -138,7 +121,7 @@ const Profile: React.FC = () => {
                 >
                   <div className="flex items-center justify-between">
                     <span className="font-inter text-sm text-gray-600">
-                      Unlocked: {new Date(achievement.unlockedAt).toLocaleDateString()}
+                      Unlocked: {new Date(achievement.unlocked_at).toLocaleDateString()}
                     </span>
                     <div className="w-3 h-3 bg-laurel-green rounded-full animate-pulse"></div>
                   </div>
@@ -156,7 +139,7 @@ const Profile: React.FC = () => {
               Divine Energy
             </div>
             <div className="font-inter text-2xl text-bronze font-bold">
-              {Math.floor(profile.currentXP / 10)}%
+              {Math.floor(profile.current_xp / 10)}%
             </div>
           </div>
           
