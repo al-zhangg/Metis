@@ -71,6 +71,8 @@ const AuthProviderContent: React.FC<{
   children: React.ReactNode; 
   isConfigured: boolean;
 }> = ({ children, isConfigured }) => {
+  const [error, setError] = useState<string | null>(null);
+  
   const auth0Hook = isConfigured ? useAuth0() : {
     user: null,
     isAuthenticated: false,
@@ -96,6 +98,7 @@ const AuthProviderContent: React.FC<{
   
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  
   // Debug information
   const debugInfo = {
     isConfigured,
