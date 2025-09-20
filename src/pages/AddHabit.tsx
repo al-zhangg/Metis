@@ -1,0 +1,202 @@
+import React, { useState } from 'react';
+import { Plus } from 'lucide-react';
+import Button from '../components/Button';
+import Modal from '../components/Modal';
+import { addHabit } from '../services/mockApi';
+
+const AddHabit: React.FC = () => {
+  const [formData, setFormData] = useState({
+    title: '',
+    goal: '',
+    category: '',
+    description: '',
+    icon: '📚'
+  });
+  const [showModal, setShowModal] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const categories = [
+    'Wisdom', 'Strength', 'Knowledge', 'Health', 'Creativity', 'Spirituality'
+  ];
+
+  const habitIcons = [
+    '📚', '🧘‍♂️', '💪', '🏃‍♂️', '🎨', '🌱', '💧', '🍎', '✍️', '🎵'
+  ];
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    
+    try {
+      const result = await addHabit(1, formData);
+      if (result.success) {
+        setShowModal(true);
+        setFormData({
+          title: '',
+          goal: '',
+          category: '',
+          description: '',
+          icon: '📚'
+        });
+      }
+    } catch (error) {
+      console.error('Failed to add habit:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-marble to-amber-50 p-6">
+      <div className="max-w-2xl mx-auto">
+        <div className="mb-8">
+          <h1 className="font-cinzel font-bold text-3xl text-midnight-blue flex items-center gap-3">
+            <Plus className="w-8 h-8 text-bronze" />
+            Forge a New Habit
+          </h1>
+          <p className="font-inter text-gray-600 mt-2">
+            Create a new path to wisdom and self-improvement
+          </p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-lg p-8 border-2 border-bronze/20">
+          {/* Habit Icon Selection */}
+          <div className="mb-6">
+            <label className="block font-cinzel font-semibold text-midnight-blue mb-3">
+              Choose Your Symbol
+            </label>
+            <div className="grid grid-cols-5 gap-3">
+              {habitIcons.map(icon => (
+                <button
+                  key={icon}
+                  type="button"
+                  onClick={() => setFormData(prev => ({ ...prev, icon }))}
+                  className={`
+                    p-3 text-2xl rounded-lg border-2 transition-all duration-200
+                    hover:scale-110 active:scale-95
+                    ${formData.icon === icon 
+                      ? 'border-bronze bg-bronze/10' 
+                      : 'border-gray-200 hover:border-bronze/50'
+                    }
+                  `}
+                >
+                  {icon}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Habit Name */}
+          <div className="mb-6">
+            <label htmlFor="title" className="block font-cinzel font-semibold text-midnight-blue mb-2">
+              Habit Name *
+            </label>
+            <input
+              type="text"
+              id="title"
+              name="title"
+              value={formData.title}
+              onChange={handleInputChange}
+              required
+              className="w-full px-4 py-3 border-2 border-bronze/20 rounded-lg focus:border-bronze focus:ring-2 focus:ring-bronze/20 font-inter"
+              placeholder="e.g., Morning Meditation"
+            />
+          </div>
+
+          {/* Goal */}
+          <div className="mb-6">
+            <label htmlFor="goal" className="block font-cinzel font-semibold text-midnight-blue mb-2">
+              Daily Goal *
+            </label>
+            <input
+              type="text"
+              id="goal"
+              name="goal"
+              value={formData.goal}
+              onChange={handleInputChange}
+              required
+              className="w-full px-4 py-3 border-2 border-bronze/20 rounded-lg focus:border-bronze focus:ring-2 focus:ring-bronze/20 font-inter"
+              placeholder="e.g., 10 minutes daily"
+            />
+          </div>
+
+          {/* Category */}
+          <div className="mb-6">
+            <label htmlFor="category" className="block font-cinzel font-semibold text-midnight-blue mb-2">
+              Category
+            </label>
+            <select
+              id="category"
+              name="category"
+              value={formData.category}
+              onChange={handleInputChange}
+              className="w-full px-4 py-3 border-2 border-bronze/20 rounded-lg focus:border-bronze focus:ring-2 focus:ring-bronze/20 font-inter"
+            >
+              <option value="">Select a category</option>
+              {categories.map(category => (
+                <option key={category} value={category}>
+                  {category}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Description */}
+          <div className="mb-8">
+            <label htmlFor="description" className="block font-cinzel font-semibold text-midnight-blue mb-2">
+              Description
+            </label>
+            <textarea
+              id="description"
+              name="description"
+              value={formData.description}
+              onChange={handleInputChange}
+              rows={3}
+              className="w-full px-4 py-3 border-2 border-bronze/20 rounded-lg focus:border-bronze focus:ring-2 focus:ring-bronze/20 font-inter resize-none"
+              placeholder="Describe your habit and its benefits..."
+            />
+          </div>
+
+          <div className="flex gap-4">
+            <Button
+              text={isSubmitting ? "Creating..." : "Create Habit"}
+              onClick={() => {}}
+              variant="primary"
+              disabled={isSubmitting || !formData.title || !formData.goal}
+              className="flex-1"
+            />
+          </div>
+        </form>
+
+        {/* Confirmation Modal */}
+        <Modal
+          isOpen={showModal}
+          onClose={() => setShowModal(false)}
+          title="Habit Created Successfully!"
+        >
+          <div className="text-center">
+            <div className="text-6xl mb-4">{formData.icon}</div>
+            <p className="font-inter text-gray-700 mb-6">
+              Your new habit has been forged! May it bring you wisdom and strength on your journey.
+            </p>
+            <Button
+              text="Continue Your Quest"
+              onClick={() => setShowModal(false)}
+              variant="primary"
+            />
+          </div>
+        </Modal>
+      </div>
+    </div>
+  );
+};
+
+export default AddHabit;
