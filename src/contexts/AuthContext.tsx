@@ -33,28 +33,32 @@ const Auth0Wrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => 
   const currentOrigin = window.location.origin;
   const redirectUri = currentOrigin;
   
-  console.log('🔐 Auth0 Environment Variables:', {
+  // Check if we're in WebContainer environment
+  const isWebContainer = window.location.hostname.includes('webcontainer-api.io');
+  const isCodespaces = window.location.hostname.includes('github.dev') || window.location.hostname.includes('codespaces');
+  const isLocalhost = window.location.hostname === 'localhost';
+  
+  console.log('🔐 Auth0 Environment Check:', {
     domain: domain || '❌ MISSING',
     clientId: clientId ? '✅ SET' : '❌ MISSING',
-    domainValid: domain.includes('auth0.com'),
-    clientIdLength: clientId.length,
     redirectUri: redirectUri,
     currentOrigin: currentOrigin,
-    isCodespaces: window.location.hostname.includes('github.dev') || window.location.hostname.includes('codespaces'),
-    isLocalhost: window.location.hostname === 'localhost',
-    protocol: window.location.protocol,
-    hostname: window.location.hostname,
-    port: window.location.port
+    environment: isWebContainer ? 'WebContainer' : isCodespaces ? 'Codespaces' : isLocalhost ? 'Localhost' : 'Unknown',
+    hostname: window.location.hostname
   });
 
   const isAuth0Configured = domain && clientId && domain.includes('auth0.com');
 
   if (!isAuth0Configured) {
-    console.error('❌ Auth0 Configuration Invalid:', {
-      domain: domain || 'MISSING',
-      clientId: clientId ? 'Present but invalid' : 'MISSING',
-      help: 'Check your .env file'
-    });
+    const errorMsg = `Auth0 not configured. Add these URLs to your Auth0 app settings:
+    
+Callback URLs: ${currentOrigin}
+Web Origins: ${currentOrigin}  
+Logout URLs: ${currentOrigin}
+
+Current environment: ${isWebContainer ? 'WebContainer' : isCodespaces ? 'Codespaces' : 'Localhost'}`;
+    
+    console.error('❌ Auth0 Configuration Invalid:', errorMsg);
     return <AuthProviderContent isConfigured={false}>{children}</AuthProviderContent>;
   }
 
