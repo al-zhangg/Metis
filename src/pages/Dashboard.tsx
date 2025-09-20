@@ -103,7 +103,7 @@ const Dashboard: React.FC = () => {
         {/* Daily Progress */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 border border-aegean-blue/20 shadow-lg text-center">
-            <div className="text-4xl mb-2">🎯</div>
+            {/* <div className="text-4xl mb-2">🎯</div> */}
             <div className="font-cinzel font-semibold text-xl text-midnight mb-1">
               Today's Progress
             </div>
@@ -113,7 +113,7 @@ const Dashboard: React.FC = () => {
           </div>
           
           <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 border border-aegean-blue/20 shadow-lg text-center">
-            <div className="text-4xl mb-2">🔥</div>
+            {/* <div className="text-4xl mb-2"></div> */}
             <div className="font-cinzel font-semibold text-xl text-midnight mb-1">
               Longest Streak
             </div>
@@ -123,7 +123,7 @@ const Dashboard: React.FC = () => {
           </div>
           
           <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 border border-aegean-blue/20 shadow-lg text-center">
-            <div className="text-4xl mb-2">⚡</div>
+            {/* <div className="text-4xl mb-2">⚡</div> */}
             <div className="font-cinzel font-semibold text-xl text-midnight mb-1">
               Divine Energy
             </div>
@@ -147,9 +147,9 @@ const Dashboard: React.FC = () => {
           
           {habits.length === 0 ? (
             <div className="text-center py-12">
-              <div className="text-6xl mb-4">🏛️</div>
+              {/* <div className="text-6xl mb-4">🏛️</div> */}
               <p className="font-inter text-storm-gray mb-4">
-                No habits yet. Begin your heroic journey!
+                No habits yet. What must be done?
               </p>
               <Link to="/add-habit">
                 <Button text="Create Your First Habit" onClick={() => {}} variant="primary" />
@@ -223,7 +223,7 @@ const Dashboard: React.FC = () => {
         <div>
           <h2 className="font-cinzel font-semibold text-2xl text-midnight mb-6 flex items-center gap-2">
             <Target className="w-6 h-6 text-aegean-blue" />
-            Divine Quests
+            Quests
           </h2>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

@@ -10,18 +10,19 @@ export default {
         // Light blue-gray color scheme with Greek mythology inspiration
         'olympus-white': '#fefefe',
         'marble': '#f8fafc',
-        'slate-mist': '#f1f5f9',
-        'aegean-blue': '#3b82f6',
-        'deep-aegean': '#2563eb',
-        'bronze': '#cd7f32',
-        'gold': '#ffd700',
+        'slate-mist': '#E7E7E7',
+        'aegean-blue': '#90D5EC',
+        'deep-aegean': '#B7C9E2',
+        'bronze': '#AADDEC',
+        'gold': '#ADD8E6',
         'storm-gray': '#64748b',
         'midnight': '#1e293b',
-        'laurel-green': '#22c55e',
+        'laurel-green': '#C5E3EC',
       },
       fontFamily: {
-        'cinzel': ['Cinzel', 'serif'],
-        'inter': ['Inter', 'sans-serif'],
+        // Swap default project fonts: use system/Windows-safe Cambria and Georgia
+        'cinzel': ['Georgia', 'serif'],
+        'inter': ['Cambria', 'serif'],
       },
       animation: {
         'slide-up': 'slideUp 0.3s ease-out',
