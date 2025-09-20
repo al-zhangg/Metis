@@ -107,7 +107,9 @@ const AuthProviderContent: React.FC<{
     auth0Error: auth0Error?.message || 'None',
     userProfile: user ? 'Present' : 'None',
     domain: import.meta.env.VITE_AUTH0_DOMAIN || 'Missing',
-    clientId: import.meta.env.VITE_AUTH0_CLIENT_ID ? 'Set' : 'Missing'
+    clientId: import.meta.env.VITE_AUTH0_CLIENT_ID ? 'Set' : 'Missing',
+    currentUrl: window.location.origin,
+    redirectUri: window.location.origin
   };
 
   console.log('🔍 Auth Debug Info:', debugInfo);

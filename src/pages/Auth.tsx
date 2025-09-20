@@ -117,7 +117,9 @@ const Auth: React.FC = () => {
                 Auth0 User: {debugInfo.auth0User}<br/>
                 Authenticated: {debugInfo.auth0IsAuthenticated ? '✅' : '❌'}<br/>
                 Loading: {debugInfo.auth0Loading ? '⏳' : '✅'}<br/>
-                Error: {debugInfo.auth0Error}
+                Error: {debugInfo.auth0Error}<br/>
+                Current URL: {debugInfo.currentUrl}<br/>
+                Redirect URI: {debugInfo.redirectUri}
               </p>
             </div>
           )}
