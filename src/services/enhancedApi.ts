@@ -1,13 +1,7 @@
 import { supabase } from './supabaseClient';
+import { isSupabaseConfigured } from './supabaseClient';
 import { aiService } from './aiService';
 import type { Habit, JournalEntry, Quest, UserProfile } from './supabaseClient';
-
-// Check if Supabase is properly configured
-const isSupabaseConfigured = () => {
-  const url = import.meta.env.VITE_SUPABASE_URL;
-  const key = import.meta.env.VITE_SUPABASE_ANON_KEY;
-  return url && key && url !== 'https://placeholder.supabase.co' && key !== 'placeholder-key';
-};
 
 // Enhanced API service with AI integration
 class EnhancedApiService {
@@ -44,7 +38,9 @@ class EnhancedApiService {
       };
 
       // In a real app, this would save to Supabase
-      // const { data, error } = await supabase.from('habits').insert(newHabit).select().single();
+      // if (supabase) {
+      //   const { data, error } = await supabase.from('habits').insert(newHabit).select().single();
+      // }
       
       // Mock response for development
       const mockHabit: Habit = {
@@ -62,7 +58,7 @@ class EnhancedApiService {
   async getHabits(): Promise<Habit[]> {
     try {
       // Use Supabase if configured, otherwise use mock data
-      if (isSupabaseConfigured()) {
+      if (isSupabaseConfigured() && supabase) {
         const { data, error } = await supabase.from('habits').select('*').eq('user_id', this.userId);
         if (error) throw error;
         return data || [];
@@ -113,12 +109,12 @@ class EnhancedApiService {
 
   async completeHabit(habitId: number): Promise<{ success: boolean; xpGained?: number }> {
     try {
-      if (isSupabaseConfigured()) {
+      if (isSupabaseConfigured() && supabase) {
         // Update habit in Supabase
         const { error } = await supabase
           .from('habits')
           .update({ 
-            current_streak: supabase.raw('current_streak + 1'),
+            current_streak: supabase!.raw('current_streak + 1'),
             updated_at: new Date().toISOString()
           })
           .eq('id', habitId);
