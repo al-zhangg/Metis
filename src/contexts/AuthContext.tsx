@@ -67,10 +67,18 @@ const Auth0Wrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => 
       }}
       cacheLocation="localstorage"
       useRefreshTokens={true}
-      skipRedirectCallback={window.location.search.includes('code=')}
       onRedirectCallback={(appState) => {
-        console.log('🔄 Auth0 Redirect Callback:', appState);
-        window.history.replaceState({}, document.title, window.location.pathname);
+        try {
+          console.log('🔄 Auth0 Redirect Callback:', appState);
+          const returnTo = (appState as any)?.returnTo || '/dashboard';
+          // Use history API to replace the temporary code URL with the desired app route
+          window.history.replaceState({}, document.title, returnTo);
+          // Navigate to the returnTo path
+          window.location.assign(returnTo);
+        } catch (err) {
+          console.error('Error during onRedirectCallback navigation:', err);
+          window.location.assign('/dashboard');
+        }
       }}
       onError={(error) => {
         console.error('🚨 Auth0 Error:', error);
@@ -276,7 +284,7 @@ const AuthProviderContent: React.FC<{
 
     try {
       setError(null);
-      await loginWithRedirect();
+  await loginWithRedirect({ appState: { returnTo: '/dashboard' } });
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Login failed';
       console.error('Login error:', errorMessage);
