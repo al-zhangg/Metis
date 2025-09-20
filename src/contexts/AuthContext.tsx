@@ -23,6 +23,20 @@ export const useAuth = () => {
 };
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  // Check if Auth0 is properly configured
+  const domain = import.meta.env.VITE_AUTH0_DOMAIN;
+  const clientId = import.meta.env.VITE_AUTH0_CLIENT_ID;
+  const isAuth0Configured = domain && clientId && domain.includes('auth0.com');
+  
+  const auth0Hook = isAuth0Configured ? useAuth0() : {
+    user: null,
+    isAuthenticated: false,
+    isLoading: false,
+    loginWithRedirect: () => Promise.resolve(),
+    logout: () => {},
+    error: null
+  };
+  
   const { 
     user: auth0User, 
     isAuthenticated: auth0IsAuthenticated, 
@@ -30,13 +44,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     loginWithRedirect,
     logout: auth0Logout,
     error: auth0Error
-  } = useAuth0();
+  } = auth0Hook;
   
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(
+    !isAuth0Configured ? 'Auth0 not configured properly' : null
+  );
 
   useEffect(() => {
+    if (!isAuth0Configured) {
+      setLoading(false);
+      return;
+    }
+    
     if (auth0Error) {
       setError(auth0Error.message);
       setLoading(false);
@@ -85,7 +106,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     initializeUser();
-  }, [auth0IsAuthenticated, auth0User, auth0Loading, auth0Error]);
+  }, [auth0IsAuthenticated, auth0User, auth0Loading, auth0Error, isAuth0Configured]);
 
   const getUserProfile = async (userId: string): Promise<UserProfile | null> => {
     if (isSupabaseConfigured() && supabase) {

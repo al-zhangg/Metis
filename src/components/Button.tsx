@@ -18,8 +18,9 @@ const Button: React.FC<ButtonProps> = ({
   const baseClasses = `
     px-6 py-3 rounded-lg font-inter font-medium transition-all duration-200
     focus:outline-none focus:ring-2 focus:ring-offset-2 transform
-    hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed
+    disabled:opacity-50 disabled:cursor-not-allowed
     disabled:transform-none
+    ${!disabled ? 'hover:scale-105 active:scale-95' : ''}
   `;
 
   const variantClasses = {

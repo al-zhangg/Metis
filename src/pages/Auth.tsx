@@ -7,6 +7,11 @@ import Button from '../components/Button';
 const Auth: React.FC = () => {
   const { user, login, loading, error } = useAuth();
 
+  // Check Auth0 configuration
+  const domain = import.meta.env.VITE_AUTH0_DOMAIN;
+  const clientId = import.meta.env.VITE_AUTH0_CLIENT_ID;
+  const isAuth0Configured = domain && clientId && domain.includes('auth0.com');
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex items-center justify-center">
@@ -95,33 +100,39 @@ const Auth: React.FC = () => {
           {error && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
               <p className="font-inter text-sm text-red-600">
-                {error.includes('Auth0') ? 
-                  'Authentication service not configured. Please set up Auth0 credentials.' : 
-                  error
-                }
+                <strong>Authentication Error:</strong><br/>
+                {error}
               </p>
             </div>
           )}
 
           {/* Development Notice */}
-          {(!import.meta.env.VITE_AUTH0_DOMAIN || import.meta.env.VITE_AUTH0_DOMAIN === 'dev-placeholder.us.auth0.com') && (
+          {!isAuth0Configured && (
             <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-              <p className="font-inter text-sm text-yellow-700">
-                ⚠️ Development Mode: Auth0 not configured. Please set up real Auth0 credentials in your .env file.
+              <p className="font-inter text-sm text-yellow-800">
+                <strong>⚠️ Configuration Required:</strong><br/>
+                Domain: {domain || '❌ Missing'}<br/>
+                Client ID: {clientId ? '✅ Set' : '❌ Missing'}<br/>
+                <br/>
+                Please check your .env file and restart the server.
               </p>
             </div>
           )}
 
           <Button
-            text="Sign In / Create Account"
+            text={isAuth0Configured ? "Sign In / Create Account" : "⚠️ Auth0 Not Configured"}
             onClick={handleLogin}
             variant="primary"
             className="w-full mb-4"
+            disabled={!isAuth0Configured}
           />
 
           <div className="text-center">
             <p className="font-inter text-xs text-slate-500">
-              🔒 Secure authentication powered by Auth0
+              {isAuth0Configured ? 
+                "🔒 Secure authentication powered by Auth0" : 
+                "🔧 Please configure Auth0 credentials"
+              }
             </p>
           </div>
         </div>
