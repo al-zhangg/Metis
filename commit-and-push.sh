@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Metis - Commit and Push Script
 echo "🏛️ Preparing to commit Metis to GitHub..."

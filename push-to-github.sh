@@ -1,17 +1,17 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Metis - Push to GitHub Script
 echo "🚀 Pushing Metis changes to GitHub..."
 
 # Check if we're in a git repository
-if [ ! -d ".git" ]; then
+if test ! -d ".git"; then
     echo "❌ Not a git repository. Initializing..."
     git init
     echo "✅ Git repository initialized"
 fi
 
 # Check if remote origin exists
-if ! git remote get-url origin > /dev/null 2>&1; then
+if ! git remote get-url origin >/dev/null 2>&1; then
     echo "❌ No GitHub remote found."
     echo "📝 Please add your GitHub repository URL:"
     echo "   git remote add origin https://github.com/yourusername/metis.git"
@@ -24,7 +24,7 @@ echo "📁 Adding all files..."
 git add .
 
 # Check if there are changes to commit
-if git diff --staged --quiet; then
+if git diff --staged --quiet 2>/dev/null; then
     echo "ℹ️  No changes to commit"
     exit 0
 fi
