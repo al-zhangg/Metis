@@ -106,23 +106,6 @@ const Auth: React.FC = () => {
             </div>
           )}
 
-          {/* Debug Information */}
-          {debugInfo && (
-            <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-              <p className="font-inter text-xs text-blue-800">
-                <strong>🔍 Debug Info:</strong><br/>
-                Domain: {debugInfo.domain}<br/>
-                Client ID: {debugInfo.clientId}<br/>
-                Configured: {debugInfo.isConfigured ? '✅' : '❌'}<br/>
-                Auth0 User: {debugInfo.auth0User}<br/>
-                Authenticated: {debugInfo.auth0IsAuthenticated ? '✅' : '❌'}<br/>
-                Loading: {debugInfo.auth0Loading ? '⏳' : '✅'}<br/>
-                Error: {debugInfo.auth0Error}<br/>
-                Current URL: {debugInfo.currentUrl}<br/>
-                Redirect URI: {debugInfo.redirectUri}
-              </p>
-            </div>
-          )}
 
           {/* Development Notice */}
           {!isAuth0Configured && (

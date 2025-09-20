@@ -113,16 +113,10 @@ const AuthProviderContent: React.FC<{
     redirectUri: window.location.origin
   };
 
-  console.log('🔍 Auth Debug Info:', debugInfo);
+  // console.log('🔍 Auth Debug Info:', debugInfo); // Disabled for production
 
   useEffect(() => {
-    console.log('🔄 Auth Effect Running:', {
-      isConfigured,
-      auth0Loading,
-      auth0IsAuthenticated,
-      auth0User: auth0User ? 'Present' : 'None',
-      auth0Error: auth0Error?.message || 'None'
-    });
+    // console.log('🔄 Auth Effect Running:', { isConfigured, auth0Loading, auth0IsAuthenticated });
 
     if (!isConfigured) {
       setError('Auth0 not configured properly');
@@ -131,7 +125,7 @@ const AuthProviderContent: React.FC<{
     }
     
     if (auth0Error) {
-      console.error('❌ Auth0 Error:', auth0Error);
+      console.error('Auth0 Error:', auth0Error);
       setError(auth0Error.message);
       setLoading(false);
       return;
@@ -139,12 +133,11 @@ const AuthProviderContent: React.FC<{
 
     const initializeUser = async () => {
       if (auth0Loading) {
-        console.log('⏳ Auth0 still loading...');
+        // Still loading, wait for Auth0
         return;
       }
       
       if (auth0IsAuthenticated && auth0User) {
-        console.log('✅ User authenticated:', auth0User);
         try {
           setError(null);
           // Try to get existing user profile
@@ -152,15 +145,13 @@ const AuthProviderContent: React.FC<{
           
           // If user doesn't exist, create new profile with defaults
           if (!userProfile) {
-            console.log('👤 Creating new user profile...');
             userProfile = await createUserProfile(auth0User);
           }
           
-          console.log('✅ User profile loaded:', userProfile);
           setUser(userProfile);
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : 'Failed to initialize user';
-          console.error('❌ Error initializing user:', errorMessage);
+          console.error('Error initializing user:', errorMessage);
           setError(errorMessage);
           
           // Create fallback user profile
@@ -178,7 +169,7 @@ const AuthProviderContent: React.FC<{
           setUser(fallbackProfile);
         }
       } else {
-        console.log('❌ User not authenticated');
+        // User not authenticated, show login page
         setUser(null);
       }
       
@@ -238,28 +229,25 @@ const AuthProviderContent: React.FC<{
   };
 
   const login = async () => {
-    console.log('🔐 Login attempt...');
     if (!isConfigured) {
-      console.error('❌ Cannot login - Auth0 not configured');
+      console.error('Cannot login - Auth0 not configured');
       setError('Auth0 not configured properly');
       return;
     }
 
     try {
       setError(null);
-      console.log('🚀 Calling Auth0 loginWithRedirect...');
       await loginWithRedirect();
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Login failed';
-      console.error('❌ Login error:', errorMessage);
+      console.error('Login error:', errorMessage);
       setError(errorMessage);
     }
   };
 
   const logout = () => {
-    console.log('🚪 Logout attempt...');
     if (!isConfigured) {
-      console.error('❌ Cannot logout - Auth0 not configured');
+      console.error('Cannot logout - Auth0 not configured');
       return;
     }
 
