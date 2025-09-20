@@ -128,6 +128,17 @@ const Auth: React.FC = () => {
             disabled={!isAuth0Configured}
           />
 
+          {/* Current URL Info for Auth0 Setup */}
+          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <p className="font-inter text-sm text-blue-800">
+              <strong>📋 For Auth0 Setup:</strong><br/>
+              Add this URL to your Auth0 "Allowed Callback URLs":<br/>
+              <code className="bg-white px-2 py-1 rounded text-xs break-all">
+                {window.location.origin}
+              </code>
+            </p>
+          </div>
+
           <div className="text-center">
             <p className="font-inter text-xs text-slate-500">
               {isAuth0Configured ? 

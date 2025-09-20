@@ -53,12 +53,16 @@ const Auth0Wrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => 
       domain={domain}
       clientId={clientId}
       authorizationParams={{
-        redirect_uri: window.location.origin
+        redirect_uri: window.location.origin,
+        audience: `https://${domain}/api/v2/`,
+        scope: "openid profile email"
       }}
       cacheLocation="localstorage"
       useRefreshTokens={true}
+      skipRedirectCallback={window.location.search.includes('code=')}
       onRedirectCallback={(appState) => {
         console.log('🔄 Auth0 Redirect Callback:', appState);
+        window.history.replaceState({}, document.title, window.location.pathname);
       }}
     >
       <AuthProviderContent isConfigured={true}>{children}</AuthProviderContent>
