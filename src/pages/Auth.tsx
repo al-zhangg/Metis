@@ -5,7 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import Button from '../components/Button';
 
 const Auth: React.FC = () => {
-  const { user, login, loading, error } = useAuth();
+  const { user, login, loading, error, debugInfo } = useAuth();
 
   // Check Auth0 configuration
   const domain = import.meta.env.VITE_AUTH0_DOMAIN;
@@ -28,7 +28,7 @@ const Auth: React.FC = () => {
   }
 
   const handleLogin = () => {
-    console.log('Login button clicked');
+    console.log('🔐 Login button clicked');
     login();
   };
 
@@ -102,6 +102,22 @@ const Auth: React.FC = () => {
               <p className="font-inter text-sm text-red-600">
                 <strong>Authentication Error:</strong><br/>
                 {error}
+              </p>
+            </div>
+          )}
+
+          {/* Debug Information */}
+          {debugInfo && (
+            <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="font-inter text-xs text-blue-800">
+                <strong>🔍 Debug Info:</strong><br/>
+                Domain: {debugInfo.domain}<br/>
+                Client ID: {debugInfo.clientId}<br/>
+                Configured: {debugInfo.isConfigured ? '✅' : '❌'}<br/>
+                Auth0 User: {debugInfo.auth0User}<br/>
+                Authenticated: {debugInfo.auth0IsAuthenticated ? '✅' : '❌'}<br/>
+                Loading: {debugInfo.auth0Loading ? '⏳' : '✅'}<br/>
+                Error: {debugInfo.auth0Error}
               </p>
             </div>
           )}

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { useAuth0 } from '@auth0/auth0-react';
+import { Auth0Provider, useAuth0 } from '@auth0/auth0-react';
 import { supabase, isSupabaseConfigured } from '../services/supabaseClient';
 import type { UserProfile } from '../services/supabaseClient';
 
@@ -10,6 +10,7 @@ interface AuthContextType {
   loading: boolean;
   isAuthenticated: boolean;
   error: string | null;
+  debugInfo: any;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -22,18 +23,65 @@ export const useAuth = () => {
   return context;
 };
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Check if Auth0 is properly configured
-  const domain = import.meta.env.VITE_AUTH0_DOMAIN;
-  const clientId = import.meta.env.VITE_AUTH0_CLIENT_ID;
-  const isAuth0Configured = domain && clientId && domain.includes('auth0.com');
+// Auth0 Wrapper Component
+const Auth0Wrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const domain = import.meta.env.VITE_AUTH0_DOMAIN || '';
+  const clientId = import.meta.env.VITE_AUTH0_CLIENT_ID || '';
   
-  const auth0Hook = isAuth0Configured ? useAuth0() : {
+  console.log('🔐 Auth0 Environment Variables:', {
+    domain: domain || '❌ MISSING',
+    clientId: clientId ? '✅ SET' : '❌ MISSING',
+    domainValid: domain.includes('auth0.com'),
+    clientIdLength: clientId.length
+  });
+
+  const isAuth0Configured = domain && clientId && domain.includes('auth0.com');
+
+  if (!isAuth0Configured) {
+    console.error('❌ Auth0 Configuration Invalid:', {
+      domain: domain || 'MISSING',
+      clientId: clientId ? 'Present but invalid' : 'MISSING',
+      help: 'Check your .env file'
+    });
+    return <AuthProviderContent isConfigured={false}>{children}</AuthProviderContent>;
+  }
+
+  console.log('✅ Auth0 Configuration Valid - Initializing Provider');
+
+  return (
+    <Auth0Provider
+      domain={domain}
+      clientId={clientId}
+      authorizationParams={{
+        redirect_uri: window.location.origin
+      }}
+      cacheLocation="localstorage"
+      useRefreshTokens={true}
+      onRedirectCallback={(appState) => {
+        console.log('🔄 Auth0 Redirect Callback:', appState);
+      }}
+    >
+      <AuthProviderContent isConfigured={true}>{children}</AuthProviderContent>
+    </Auth0Provider>
+  );
+};
+
+// Main Auth Provider Content
+const AuthProviderContent: React.FC<{ 
+  children: React.ReactNode; 
+  isConfigured: boolean;
+}> = ({ children, isConfigured }) => {
+  const auth0Hook = isConfigured ? useAuth0() : {
     user: null,
     isAuthenticated: false,
     isLoading: false,
-    loginWithRedirect: () => Promise.resolve(),
-    logout: () => {},
+    loginWithRedirect: () => {
+      console.error('❌ Auth0 not configured - cannot login');
+      return Promise.resolve();
+    },
+    logout: () => {
+      console.error('❌ Auth0 not configured - cannot logout');
+    },
     error: null
   };
   
@@ -48,26 +96,52 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(
-    !isAuth0Configured ? 'Auth0 not configured properly' : null
-  );
+  const [error, setError] = useState<string | null>(null);
+
+  // Debug information
+  const debugInfo = {
+    isConfigured,
+    auth0User: auth0User ? 'Present' : 'None',
+    auth0IsAuthenticated,
+    auth0Loading,
+    auth0Error: auth0Error?.message || 'None',
+    userProfile: user ? 'Present' : 'None',
+    domain: import.meta.env.VITE_AUTH0_DOMAIN || 'Missing',
+    clientId: import.meta.env.VITE_AUTH0_CLIENT_ID ? 'Set' : 'Missing'
+  };
+
+  console.log('🔍 Auth Debug Info:', debugInfo);
 
   useEffect(() => {
-    if (!isAuth0Configured) {
+    console.log('🔄 Auth Effect Running:', {
+      isConfigured,
+      auth0Loading,
+      auth0IsAuthenticated,
+      auth0User: auth0User ? 'Present' : 'None',
+      auth0Error: auth0Error?.message || 'None'
+    });
+
+    if (!isConfigured) {
+      setError('Auth0 not configured properly');
       setLoading(false);
       return;
     }
     
     if (auth0Error) {
+      console.error('❌ Auth0 Error:', auth0Error);
       setError(auth0Error.message);
       setLoading(false);
       return;
     }
 
     const initializeUser = async () => {
-      if (auth0Loading) return;
+      if (auth0Loading) {
+        console.log('⏳ Auth0 still loading...');
+        return;
+      }
       
       if (auth0IsAuthenticated && auth0User) {
+        console.log('✅ User authenticated:', auth0User);
         try {
           setError(null);
           // Try to get existing user profile
@@ -75,13 +149,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           
           // If user doesn't exist, create new profile with defaults
           if (!userProfile) {
+            console.log('👤 Creating new user profile...');
             userProfile = await createUserProfile(auth0User);
           }
           
+          console.log('✅ User profile loaded:', userProfile);
           setUser(userProfile);
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : 'Failed to initialize user';
-          console.error('Error initializing user:', errorMessage);
+          console.error('❌ Error initializing user:', errorMessage);
           setError(errorMessage);
           
           // Create fallback user profile
@@ -99,6 +175,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setUser(fallbackProfile);
         }
       } else {
+        console.log('❌ User not authenticated');
         setUser(null);
       }
       
@@ -106,7 +183,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     initializeUser();
-  }, [auth0IsAuthenticated, auth0User, auth0Loading, auth0Error, isAuth0Configured]);
+  }, [auth0IsAuthenticated, auth0User, auth0Loading, auth0Error, isConfigured]);
 
   const getUserProfile = async (userId: string): Promise<UserProfile | null> => {
     if (isSupabaseConfigured() && supabase) {
@@ -158,17 +235,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const login = async () => {
+    console.log('🔐 Login attempt...');
+    if (!isConfigured) {
+      console.error('❌ Cannot login - Auth0 not configured');
+      setError('Auth0 not configured properly');
+      return;
+    }
+
     try {
       setError(null);
+      console.log('🚀 Calling Auth0 loginWithRedirect...');
       await loginWithRedirect();
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Login failed';
+      console.error('❌ Login error:', errorMessage);
       setError(errorMessage);
-      console.error('Login error:', errorMessage);
     }
   };
 
   const logout = () => {
+    console.log('🚪 Logout attempt...');
+    if (!isConfigured) {
+      console.error('❌ Cannot logout - Auth0 not configured');
+      return;
+    }
+
     auth0Logout({ 
       logoutParams: { 
         returnTo: window.location.origin 
@@ -176,7 +267,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
     setUser(null);
     setError(null);
-    // Clear local storage
     localStorage.clear();
   };
 
@@ -187,9 +277,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       logout, 
       loading: loading || auth0Loading,
       isAuthenticated: auth0IsAuthenticated && !!user,
-      error
+      error,
+      debugInfo
     }}>
       {children}
     </AuthContext.Provider>
+  );
+};
+
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  return (
+    <Auth0Wrapper>
+      {children}
+    </Auth0Wrapper>
   );
 };
