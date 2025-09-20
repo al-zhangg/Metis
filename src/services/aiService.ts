@@ -30,6 +30,11 @@ class AIService {
   constructor() {
     this.apiUrl = import.meta.env.VITE_AI_API_URL || '';
     this.apiKey = import.meta.env.VITE_AI_API_KEY || '';
+    
+    // Validate configuration
+    if (!this.apiUrl || !this.apiKey) {
+      console.warn('AI Service: Missing API URL or API Key. Using fallback responses.');
+    }
   }
 
   private async makeAIRequest(prompt: string, systemPrompt: string): Promise<any> {
@@ -38,6 +43,12 @@ class AIService {
     // Check cache first
     if (this.cache.has(cacheKey)) {
       return this.cache.get(cacheKey);
+    }
+    
+    // If no API configuration, use fallback immediately
+    if (!this.apiUrl || !this.apiKey) {
+      console.warn('AI Service: No API configuration found, using fallback response');
+      return this.getFallbackResponse(prompt, systemPrompt);
     }
 
     try {
