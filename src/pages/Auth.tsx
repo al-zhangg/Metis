@@ -5,7 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import Button from '../components/Button';
 
 const Auth: React.FC = () => {
-  const { user, login, loading } = useAuth();
+  const { user, login, loading, error } = useAuth();
 
   if (loading) {
     return (
@@ -21,6 +21,11 @@ const Auth: React.FC = () => {
   if (user) {
     return <Navigate to="/" replace />;
   }
+
+  const handleLogin = () => {
+    console.log('Login button clicked');
+    login();
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex items-center justify-center p-6">
@@ -86,9 +91,30 @@ const Auth: React.FC = () => {
             </p>
           </div>
 
+          {/* Error Display */}
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+              <p className="font-inter text-sm text-red-600">
+                {error.includes('Auth0') ? 
+                  'Authentication service not configured. Please set up Auth0 credentials.' : 
+                  error
+                }
+              </p>
+            </div>
+          )}
+
+          {/* Development Notice */}
+          {(!import.meta.env.VITE_AUTH0_DOMAIN || import.meta.env.VITE_AUTH0_DOMAIN === 'dev-placeholder.us.auth0.com') && (
+            <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <p className="font-inter text-sm text-yellow-700">
+                ⚠️ Development Mode: Auth0 not configured. Please set up real Auth0 credentials in your .env file.
+              </p>
+            </div>
+          )}
+
           <Button
             text="Sign In / Create Account"
-            onClick={login}
+            onClick={handleLogin}
             variant="primary"
             className="w-full mb-4"
           />

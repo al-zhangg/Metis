@@ -9,6 +9,7 @@ interface AuthContextType {
   logout: () => void;
   loading: boolean;
   isAuthenticated: boolean;
+  error: string | null;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -27,18 +28,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     isAuthenticated: auth0IsAuthenticated, 
     isLoading: auth0Loading,
     loginWithRedirect,
-    logout: auth0Logout
+    logout: auth0Logout,
+    error: auth0Error
   } = useAuth0();
   
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (auth0Error) {
+      setError(auth0Error.message);
+      setLoading(false);
+      return;
+    }
+
     const initializeUser = async () => {
       if (auth0Loading) return;
       
       if (auth0IsAuthenticated && auth0User) {
         try {
+          setError(null);
           // Try to get existing user profile
           let userProfile = await getUserProfile(auth0User.sub!);
           
@@ -49,7 +59,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           
           setUser(userProfile);
         } catch (error) {
-          console.error('Error initializing user:', error);
+          const errorMessage = error instanceof Error ? error.message : 'Failed to initialize user';
+          console.error('Error initializing user:', errorMessage);
+          setError(errorMessage);
+          
           // Create fallback user profile
           const fallbackProfile: UserProfile = {
             id: auth0User.sub!,
@@ -72,7 +85,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     initializeUser();
-  }, [auth0IsAuthenticated, auth0User, auth0Loading]);
+  }, [auth0IsAuthenticated, auth0User, auth0Loading, auth0Error]);
 
   const getUserProfile = async (userId: string): Promise<UserProfile | null> => {
     if (isSupabaseConfigured() && supabase) {
@@ -123,8 +136,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return newProfile;
   };
 
-  const login = () => {
-    loginWithRedirect();
+  const login = async () => {
+    try {
+      setError(null);
+      await loginWithRedirect();
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Login failed';
+      setError(errorMessage);
+      console.error('Login error:', errorMessage);
+    }
   };
 
   const logout = () => {
@@ -134,6 +154,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } 
     });
     setUser(null);
+    setError(null);
     // Clear local storage
     localStorage.clear();
   };
@@ -144,7 +165,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       login, 
       logout, 
       loading: loading || auth0Loading,
-      isAuthenticated: auth0IsAuthenticated && !!user
+      isAuthenticated: auth0IsAuthenticated && !!user,
+      error
     }}>
       {children}
     </AuthContext.Provider>
