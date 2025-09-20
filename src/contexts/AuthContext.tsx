@@ -96,8 +96,6 @@ const AuthProviderContent: React.FC<{
   
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
   // Debug information
   const debugInfo = {
     isConfigured,
