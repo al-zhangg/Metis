@@ -1,47 +1,43 @@
-// AI Service for Metis - Powered by Cerebras or compatible AI API
-interface HabitClassification {
-  category: 'health' | 'learning' | 'productivity' | 'mindfulness' | 'social' | 'creativity';
+// AI Service for habit classification, journal analysis, and goal adjustments
+export interface HabitClassification {
+  category: string;
   difficulty: 'easy' | 'medium' | 'hard';
-  suggestedFrequency: 'daily' | 'weekly' | 'bi-weekly';
+  suggestedFrequency: string;
   mythicTitle: string;
   wisdom: string;
 }
 
-interface JournalInsight {
-  mood: 'positive' | 'neutral' | 'negative' | 'mixed';
+export interface JournalAnalysis {
+  mood: 'positive' | 'negative' | 'mixed' | 'neutral';
   obstacles: string[];
   mythicAdvice: string;
   oracleTitle: string;
   actionableSteps: string[];
 }
 
-interface GoalAdjustment {
-  recommendation: 'increase' | 'maintain' | 'decrease' | 'pause';
-  reason: string;
+export interface GoalAdjustment {
+  recommendation: string;
+  adjustedFrequency?: string;
+  motivationalMessage: string;
   mythicGuidance: string;
-  adjustedTarget: string;
 }
 
 class AIService {
   private apiUrl: string;
   private apiKey: string;
-  private cache: Map<string, any> = new Map();
 
   constructor() {
     this.apiUrl = import.meta.env.VITE_AI_API_URL || '';
     this.apiKey = import.meta.env.VITE_AI_API_KEY || '';
   }
 
-  private async makeAIRequest(prompt: string, systemPrompt: string): Promise<any> {
-    const cacheKey = `${systemPrompt}-${prompt}`;
-    
-    // Check cache first
-    if (this.cache.has(cacheKey)) {
-      return this.cache.get(cacheKey);
-    }
-
+  private async makeAIRequest(prompt: string): Promise<any> {
     try {
-      // Simulate AI API call - replace with actual Cerebras API
+      if (!this.apiUrl || !this.apiKey) {
+        console.warn('AI API not configured, using fallback response');
+        return this.getFallbackResponse(prompt);
+      }
+
       const response = await fetch(this.apiUrl, {
         method: 'POST',
         headers: {
@@ -49,124 +45,170 @@ class AIService {
           'Authorization': `Bearer ${this.apiKey}`,
         },
         body: JSON.stringify({
+          model: 'llama3.1-8b',
           messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: prompt }
+            {
+              role: 'user',
+              content: prompt
+            }
           ],
-          temperature: 0.7,
-          max_tokens: 500
+          max_tokens: 500,
+          temperature: 0.7
         })
       });
 
       if (!response.ok) {
-        throw new Error('AI API request failed');
+        throw new Error(`AI API request failed with status: ${response.status}`);
       }
 
       const data = await response.json();
-      const result = JSON.parse(data.choices[0].message.content);
-      
-      // Cache the result
-      this.cache.set(cacheKey, result);
-      
-      return result;
+      return data.choices?.[0]?.message?.content || this.getFallbackResponse(prompt);
     } catch (error) {
       console.error('AI Service Error:', error);
-      // Return fallback response
-      return this.getFallbackResponse(prompt, systemPrompt);
+      return this.getFallbackResponse(prompt);
     }
   }
 
-  private getFallbackResponse(prompt: string, systemPrompt: string): any {
-    // Fallback responses when AI is unavailable
-    if (systemPrompt.includes('habit classification')) {
-      return {
-        category: 'health',
+  private getFallbackResponse(prompt: string): string {
+    if (prompt.includes('classify habit')) {
+      return JSON.stringify({
+        category: 'personal_growth',
         difficulty: 'medium',
         suggestedFrequency: 'daily',
-        mythicTitle: 'Path of the Disciplined Warrior',
-        wisdom: 'Every small step builds the foundation of greatness.'
+        mythicTitle: 'Path of the Determined Hero',
+        wisdom: 'Every great journey begins with a single step.'
+      });
+    } else if (prompt.includes('analyze journal')) {
+      return JSON.stringify({
+        mood: 'positive',
+        obstacles: ['Time management', 'Motivation'],
+        mythicAdvice: 'Like Odysseus, your journey has challenges, but wisdom guides you home.',
+        oracleTitle: 'Seeker of Truth',
+        actionableSteps: ['Reflect daily', 'Set small goals', 'Celebrate progress']
+      });
+    } else if (prompt.includes('goal adjustment')) {
+      return JSON.stringify({
+        recommendation: 'Continue your current path with minor adjustments',
+        adjustedFrequency: 'daily',
+        motivationalMessage: 'Your dedication shows the spirit of a true hero.',
+        mythicGuidance: 'Like the phoenix, rise stronger from each challenge.'
+      });
+    }
+    return '{}';
+  }
+
+  async classifyHabit(title: string, description: string): Promise<HabitClassification> {
+    try {
+      const prompt = `Classify this habit and provide mythic wisdom:
+Title: ${title}
+Description: ${description}
+
+Please respond with a JSON object containing:
+- category (string): one of "health", "mindfulness", "productivity", "learning", "social", "creative", "personal_growth"
+- difficulty (string): "easy", "medium", or "hard"
+- suggestedFrequency (string): "daily", "weekly", or "monthly"
+- mythicTitle (string): a heroic/mythological title for this habit
+- wisdom (string): a short inspirational quote related to this habit
+
+Respond only with valid JSON.`;
+
+      const response = await this.makeAIRequest(prompt);
+      const parsed = typeof response === 'string' ? JSON.parse(response) : response;
+      
+      return {
+        category: parsed.category || 'personal_growth',
+        difficulty: parsed.difficulty || 'medium',
+        suggestedFrequency: parsed.suggestedFrequency || 'daily',
+        mythicTitle: parsed.mythicTitle || 'Path of the Determined Hero',
+        wisdom: parsed.wisdom || 'Every great journey begins with a single step.'
+      };
+    } catch (error) {
+      console.error('Error classifying habit:', error);
+      return {
+        category: 'personal_growth',
+        difficulty: 'medium',
+        suggestedFrequency: 'daily',
+        mythicTitle: 'Path of the Determined Hero',
+        wisdom: 'Every great journey begins with a single step.'
       };
     }
-    
-    if (systemPrompt.includes('journal analysis')) {
+  }
+
+  async analyzeJournal(entry: string): Promise<JournalAnalysis> {
+    try {
+      const prompt = `Analyze this journal entry and provide mythic wisdom:
+Entry: ${entry}
+
+Please respond with a JSON object containing:
+- mood (string): "positive", "negative", "mixed", or "neutral"
+- obstacles (array): list of challenges mentioned or implied
+- mythicAdvice (string): wisdom in the style of ancient mythology
+- oracleTitle (string): a mystical title for the person based on their entry
+- actionableSteps (array): 2-3 specific actionable steps
+
+Respond only with valid JSON.`;
+
+      const response = await this.makeAIRequest(prompt);
+      const parsed = typeof response === 'string' ? JSON.parse(response) : response;
+      
+      return {
+        mood: parsed.mood || 'neutral',
+        obstacles: parsed.obstacles || ['Self-doubt'],
+        mythicAdvice: parsed.mythicAdvice || 'Like Odysseus, your journey has challenges, but wisdom guides you home.',
+        oracleTitle: parsed.oracleTitle || 'Seeker of Truth',
+        actionableSteps: parsed.actionableSteps || ['Reflect daily', 'Set small goals']
+      };
+    } catch (error) {
+      console.error('Error analyzing journal:', error);
       return {
         mood: 'neutral',
-        obstacles: ['Time management', 'Motivation'],
-        mythicAdvice: 'Like Odysseus facing the sirens, stay true to your course.',
-        oracleTitle: 'The Seeker\'s Reflection',
-        actionableSteps: ['Break tasks into smaller steps', 'Set specific times for habits']
+        obstacles: ['Self-doubt'],
+        mythicAdvice: 'Like Odysseus, your journey has challenges, but wisdom guides you home.',
+        oracleTitle: 'Seeker of Truth',
+        actionableSteps: ['Reflect daily', 'Set small goals']
       };
     }
-
-    return {};
-  }
-
-  async classifyHabit(habitName: string, description: string): Promise<HabitClassification> {
-    const systemPrompt = `You are Metis, the Greek goddess of wisdom and counsel. Analyze habits and provide structured classification with mythic wisdom. Always respond with valid JSON in this exact format:
-    {
-      "category": "health|learning|productivity|mindfulness|social|creativity",
-      "difficulty": "easy|medium|hard",
-      "suggestedFrequency": "daily|weekly|bi-weekly",
-      "mythicTitle": "A poetic title inspired by Greek mythology",
-      "wisdom": "A short, inspiring piece of wisdom (max 100 characters)"
-    }`;
-
-    const prompt = `Classify this habit:
-    Name: ${habitName}
-    Description: ${description}
-    
-    Consider behavioral science principles for difficulty assessment.`;
-
-    return await this.makeAIRequest(prompt, systemPrompt);
-  }
-
-  async analyzeJournal(entry: string): Promise<JournalInsight> {
-    const systemPrompt = `You are the Oracle of Delphi, providing wisdom through journal analysis. Extract mood, identify obstacles, and offer mythic yet actionable advice. Always respond with valid JSON in this exact format:
-    {
-      "mood": "positive|neutral|negative|mixed",
-      "obstacles": ["obstacle1", "obstacle2"],
-      "mythicAdvice": "Short mythic wisdom (max 150 characters)",
-      "oracleTitle": "A mystical title for this reflection",
-      "actionableSteps": ["step1", "step2"]
-    }`;
-
-    const prompt = `Analyze this journal entry and provide insights:
-    "${entry}"
-    
-    Focus on emotional tone, challenges mentioned, and practical next steps.`;
-
-    return await this.makeAIRequest(prompt, systemPrompt);
   }
 
   async suggestGoalAdjustment(
-    habitName: string, 
-    currentStreak: number, 
-    completionRate: number, 
-    recentEntries: string[]
+    habitTitle: string,
+    currentStreak: number,
+    completionRate: number,
+    recentJournalEntries: string[]
   ): Promise<GoalAdjustment> {
-    const systemPrompt = `You are Athena, goddess of wisdom and strategy. Analyze habit progress and suggest adaptive adjustments. Always respond with valid JSON in this exact format:
-    {
-      "recommendation": "increase|maintain|decrease|pause",
-      "reason": "Brief explanation of the recommendation",
-      "mythicGuidance": "Mythic wisdom about the adjustment (max 120 characters)",
-      "adjustedTarget": "Specific suggestion for the new target"
-    }`;
+    try {
+      const prompt = `Analyze this habit progress and suggest adjustments:
+Habit: ${habitTitle}
+Current Streak: ${currentStreak} days
+Completion Rate: ${completionRate}%
+Recent Journal Context: ${recentJournalEntries.join(' ')}
 
-    const prompt = `Analyze this habit progress:
-    Habit: ${habitName}
-    Current Streak: ${currentStreak} days
-    Completion Rate: ${completionRate}%
-    Recent Journal Mentions: ${recentEntries.join(', ')}
-    
-    Suggest whether to increase, maintain, decrease difficulty, or pause.`;
+Please respond with a JSON object containing:
+- recommendation (string): specific advice for improvement
+- adjustedFrequency (string): suggested frequency if changes needed
+- motivationalMessage (string): encouraging message
+- mythicGuidance (string): wisdom in mythological style
 
-    return await this.makeAIRequest(prompt, systemPrompt);
-  }
+Respond only with valid JSON.`;
 
-  clearCache(): void {
-    this.cache.clear();
+      const response = await this.makeAIRequest(prompt);
+      const parsed = typeof response === 'string' ? JSON.parse(response) : response;
+      
+      return {
+        recommendation: parsed.recommendation || 'Continue your current path with minor adjustments',
+        adjustedFrequency: parsed.adjustedFrequency,
+        motivationalMessage: parsed.motivationalMessage || 'Your dedication shows the spirit of a true hero.',
+        mythicGuidance: parsed.mythicGuidance || 'Like the phoenix, rise stronger from each challenge.'
+      };
+    } catch (error) {
+      console.error('Error suggesting goal adjustment:', error);
+      return {
+        recommendation: 'Continue your current path with minor adjustments',
+        motivationalMessage: 'Your dedication shows the spirit of a true hero.',
+        mythicGuidance: 'Like the phoenix, rise stronger from each challenge.'
+      };
+    }
   }
 }
 
 export const aiService = new AIService();
-export type { HabitClassification, JournalInsight, GoalAdjustment };

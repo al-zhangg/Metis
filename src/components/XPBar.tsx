@@ -1,4 +1,5 @@
 import React from 'react';
+import { Crown } from 'lucide-react';
 
 interface XPBarProps {
   currentXP: number;
@@ -7,54 +8,58 @@ interface XPBarProps {
   className?: string;
 }
 
-const XPBar: React.FC<XPBarProps> = ({
-  currentXP,
-  maxXP,
-  level,
-  className = ''
-}) => {
+const XPBar: React.FC<XPBarProps> = ({ currentXP, maxXP, level, className = '' }) => {
   const percentage = Math.min((currentXP / maxXP) * 100, 100);
+  const nextLevelXP = maxXP - currentXP;
 
   return (
-    <div className={`flex items-center gap-4 ${className}`}>
-      <div className="flex items-center gap-2">
-        <span className="font-cinzel font-semibold text-bronze text-lg">
-          Level {level}
-        </span>
-      </div>
-      
-      {/* Amphora-style XP bar */}
-      <div className="flex-1 relative">
-        <div className="relative w-full h-8 bg-marble border-2 border-bronze rounded-full overflow-hidden shadow-inner">
-          {/* Amphora shape decorations */}
-          <div className="absolute left-2 top-1 w-2 h-6 bg-bronze/30 rounded-full"></div>
-          <div className="absolute right-2 top-1 w-2 h-6 bg-bronze/30 rounded-full"></div>
-          
-          {/* XP fill with liquid effect */}
-          <div
-            className="absolute bottom-0 left-0 h-full bg-gradient-to-r from-bronze via-amber-500 to-bronze
-                       shadow-inner transition-all duration-1000 ease-out origin-bottom animate-fill-amphora"
-            style={{
-              width: `${percentage}%`,
-              background: `linear-gradient(90deg, 
-                rgba(184, 115, 51, 0.8) 0%, 
-                rgba(245, 158, 11, 0.9) 50%, 
-                rgba(184, 115, 51, 0.8) 100%)`
-            }}
-          >
-            {/* Liquid shimmer effect */}
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent
-                            transform -skew-x-12 animate-pulse"></div>
+    <div className={`bg-white/80 backdrop-blur-sm rounded-xl p-6 border border-aegean-blue/20 shadow-lg ${className}`}>
+      {/* Level and XP info */}
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 bg-gradient-to-br from-gold to-bronze rounded-full flex items-center justify-center shadow-lg">
+            <Crown className="w-6 h-6 text-white" />
           </div>
-          
-          {/* Amphora mouth decoration */}
-          <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-4 h-2 bg-bronze/40 rounded-b-full"></div>
+          <div>
+            <h3 className="font-cinzel font-bold text-xl text-midnight">
+              Level {level}
+            </h3>
+            <p className="font-inter text-sm text-storm-gray">
+              Divine Warrior
+            </p>
+          </div>
+        </div>
+        <div className="text-right">
+          <p className="font-inter font-semibold text-midnight">
+            {currentXP.toLocaleString()} XP
+          </p>
+          <p className="font-inter text-sm text-storm-gray">
+            {nextLevelXP.toLocaleString()} to next level
+          </p>
+        </div>
+      </div>
+
+      {/* XP Progress Bar */}
+      <div className="relative">
+        <div className="w-full bg-slate-mist rounded-full h-4 shadow-inner">
+          <div
+            className="bg-gradient-to-r from-aegean-blue via-deep-aegean to-aegean-blue h-4 rounded-full
+                       transition-all duration-1000 ease-out shadow-lg relative overflow-hidden"
+            style={{ width: `${percentage}%` }}
+          >
+            {/* Animated shine effect */}
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent
+                           transform -skew-x-12 animate-pulse"></div>
+          </div>
         </div>
         
-        {/* XP text */}
-        <div className="absolute inset-0 flex items-center justify-center">
-          <span className="font-inter font-medium text-midnight-blue text-sm drop-shadow-sm">
-            {currentXP} / {maxXP} XP
+        {/* Progress text */}
+        <div className="flex justify-between mt-2">
+          <span className="font-inter text-xs text-storm-gray">
+            {percentage.toFixed(1)}% Complete
+          </span>
+          <span className="font-inter text-xs text-storm-gray">
+            Level {level + 1}
           </span>
         </div>
       </div>

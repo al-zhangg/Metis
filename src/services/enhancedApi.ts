@@ -1,4 +1,5 @@
 import { supabase } from './supabaseClient';
+import { isSupabaseConfigured } from './supabaseClient';
 import { aiService } from './aiService';
 import type { Habit, JournalEntry, Quest, UserProfile } from './supabaseClient';
 
@@ -37,7 +38,9 @@ class EnhancedApiService {
       };
 
       // In a real app, this would save to Supabase
-      // const { data, error } = await supabase.from('habits').insert(newHabit).select().single();
+      // if (supabase) {
+      //   const { data, error } = await supabase.from('habits').insert(newHabit).select().single();
+      // }
       
       // Mock response for development
       const mockHabit: Habit = {
@@ -54,7 +57,12 @@ class EnhancedApiService {
 
   async getHabits(): Promise<Habit[]> {
     try {
-      // In a real app: const { data } = await supabase.from('habits').select('*').eq('user_id', this.userId);
+      // Use Supabase if configured, otherwise use mock data
+      if (isSupabaseConfigured() && supabase) {
+        const { data, error } = await supabase.from('habits').select('*').eq('user_id', this.userId);
+        if (error) throw error;
+        return data || [];
+      }
       
       // Mock data with AI-enhanced fields
       return [
@@ -101,8 +109,18 @@ class EnhancedApiService {
 
   async completeHabit(habitId: number): Promise<{ success: boolean; xpGained?: number }> {
     try {
-      // In a real app, update the habit completion and streak
-      // Also trigger goal adjustment analysis
+      if (isSupabaseConfigured() && supabase) {
+        // Update habit in Supabase
+        const { error } = await supabase
+          .from('habits')
+          .update({ 
+            current_streak: supabase!.raw('current_streak + 1'),
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', habitId);
+        
+        if (error) throw error;
+      }
       
       return { success: true, xpGained: 25 };
     } catch (error) {

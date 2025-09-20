@@ -1,25 +1,53 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Navigation from './components/Navigation';
 import Dashboard from './pages/Dashboard';
 import AddHabit from './pages/AddHabit';
 import Journal from './pages/Journal';
 import Profile from './pages/Profile';
+import Auth from './pages/Auth';
 
-function App() {
-  return (
-    <Router>
-      <div className="min-h-screen bg-marble">
-        <Navigation />
-        <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/add-habit" element={<AddHabit />} />
-          <Route path="/journal" element={<Journal />} />
-          <Route path="/profile" element={<Profile />} />
-        </Routes>
+const AppContent: React.FC = () => {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-marble via-slate-mist to-olympus-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-aegean-blue mx-auto mb-4"></div>
+          <p className="font-inter text-storm-gray">Loading your wisdom...</p>
+        </div>
       </div>
-    </Router>
+    );
+  }
+
+  if (!user) {
+    return <Auth />;
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-marble via-slate-mist to-olympus-white">
+      <Navigation />
+      <Routes>
+        <Route path="/" element={<Dashboard />} />
+        <Route path="/add-habit" element={<AddHabit />} />
+        <Route path="/journal" element={<Journal />} />
+        <Route path="/profile" element={<Profile />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </div>
   );
-}
+};
+
+const App: React.FC = () => {
+  return (
+    <AuthProvider>
+      <Router>
+        <AppContent />
+      </Router>
+    </AuthProvider>
+  );
+};
 
 export default App;

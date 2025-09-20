@@ -3,63 +3,45 @@ import React from 'react';
 interface ButtonProps {
   text: string;
   onClick: () => void;
-  variant?: 'primary' | 'secondary' | 'disabled';
-  className?: string;
+  variant?: 'primary' | 'secondary';
   disabled?: boolean;
+  className?: string;
 }
 
-const Button: React.FC<ButtonProps> = ({
-  text,
-  onClick,
-  variant = 'primary',
-  className = '',
-  disabled = false
+const Button: React.FC<ButtonProps> = ({ 
+  text, 
+  onClick, 
+  variant = 'primary', 
+  disabled = false,
+  className = ''
 }) => {
   const baseClasses = `
-    px-6 py-3 rounded-lg font-inter font-medium transition-all duration-300
-    transform hover:scale-105 active:scale-95 focus:outline-none focus:ring-2
-    disabled:cursor-not-allowed disabled:transform-none disabled:opacity-50
+    px-6 py-3 rounded-lg font-inter font-medium transition-all duration-200
+    focus:outline-none focus:ring-2 focus:ring-offset-2 transform
+    hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed
+    disabled:transform-none
   `;
 
   const variantClasses = {
     primary: `
-      bg-bronze text-white shadow-lg hover:bg-bronze/90 hover:shadow-xl
-      focus:ring-bronze/50 active:bg-bronze/80
+      bg-gradient-to-r from-aegean-blue to-deep-aegean text-white
+      hover:from-deep-aegean hover:to-aegean-blue
+      focus:ring-aegean-blue shadow-lg hover:shadow-xl
     `,
     secondary: `
-      bg-laurel-green text-white shadow-lg hover:bg-laurel-green/90 hover:shadow-xl
-      focus:ring-laurel-green/50 active:bg-laurel-green/80
-    `,
-    disabled: `
-      bg-gray-400 text-white cursor-not-allowed
+      bg-slate-mist text-storm-gray border-2 border-storm-gray/20
+      hover:bg-storm-gray hover:text-white hover:border-storm-gray
+      focus:ring-storm-gray
     `
   };
 
-  const actualVariant = disabled ? 'disabled' : variant;
-
   return (
     <button
-      className={`${baseClasses} ${variantClasses[actualVariant]} ${className}`}
-      onClick={disabled ? undefined : onClick}
+      onClick={onClick}
       disabled={disabled}
+      className={`${baseClasses} ${variantClasses[variant]} ${className}`}
     >
-      <span className="relative z-10">{text}</span>
-      
-      {/* Decorative elements for primary button */}
-      {actualVariant === 'primary' && (
-        <>
-          <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-bronze to-amber-600 opacity-0 hover:opacity-20 transition-opacity duration-300"></div>
-          <div className="absolute -inset-1 rounded-lg bg-bronze opacity-0 hover:opacity-10 blur transition-opacity duration-300"></div>
-        </>
-      )}
-      
-      {/* Decorative elements for secondary button */}
-      {actualVariant === 'secondary' && (
-        <>
-          <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-laurel-green to-green-600 opacity-0 hover:opacity-20 transition-opacity duration-300"></div>
-          <div className="absolute -inset-1 rounded-lg bg-laurel-green opacity-0 hover:opacity-10 blur transition-opacity duration-300"></div>
-        </>
-      )}
+      {text}
     </button>
   );
 };
