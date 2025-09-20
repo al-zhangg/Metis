@@ -11,6 +11,11 @@ const Auth: React.FC = () => {
   const domain = import.meta.env.VITE_AUTH0_DOMAIN;
   const clientId = import.meta.env.VITE_AUTH0_CLIENT_ID;
   const isAuth0Configured = domain && clientId && domain.includes('auth0.com');
+  
+  // Detect environment
+  const isCodespaces = window.location.hostname.includes('github.dev') || window.location.hostname.includes('codespaces');
+  const isLocalhost = window.location.hostname === 'localhost';
+  const currentOrigin = window.location.origin;
 
   if (loading) {
     return (
@@ -131,30 +136,56 @@ const Auth: React.FC = () => {
           {/* Current URL Info for Auth0 Setup */}
           <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
             <p className="font-inter text-sm text-blue-800">
-              <strong>🔧 REQUIRED: Add to Auth0 Settings</strong><br/>
+              <strong>🔧 REQUIRED: Add these URLs to Auth0 Settings</strong><br/>
               Go to <a href="https://manage.auth0.com/dashboard" target="_blank" className="underline">Auth0 Dashboard</a> → Your App → Settings<br/>
               <br/>
               <strong>Allowed Callback URLs:</strong><br/>
               <code className="bg-white px-2 py-1 rounded text-xs break-all">
-                {window.location.origin}
+                {currentOrigin}
               </code>
+              {isCodespaces && (
+                <>
+                  <br/><br/>
+                  <strong>⚠️ GitHub Codespaces Detected!</strong><br/>
+                  <span className="text-xs">Your Codespace URL changes each time. Add this pattern to Auth0:</span><br/>
+                  <code className="bg-white px-2 py-1 rounded text-xs break-all">
+                    https://*.github.dev, https://*.app.github.dev
+                  </code>
+                </>
+              )}
               <br/><br/>
               <strong>Allowed Web Origins:</strong><br/>
               <code className="bg-white px-2 py-1 rounded text-xs break-all">
-                {window.location.origin}
+                {currentOrigin}
               </code>
+              {isCodespaces && (
+                <>
+                  <br/>
+                  <code className="bg-white px-2 py-1 rounded text-xs break-all">
+                    https://*.github.dev, https://*.app.github.dev
+                  </code>
+                </>
+              )}
               <br/><br/>
               <strong>Allowed Logout URLs:</strong><br/>
               <code className="bg-white px-2 py-1 rounded text-xs break-all">
-                {window.location.origin}
+                {currentOrigin}
               </code>
+              {isCodespaces && (
+                <>
+                  <br/>
+                  <code className="bg-white px-2 py-1 rounded text-xs break-all">
+                    https://*.github.dev, https://*.app.github.dev
+                  </code>
+                </>
+              )}
             </p>
           </div>
 
           <div className="text-center">
             <p className="font-inter text-xs text-slate-500">
               {isAuth0Configured ? 
-                "🔒 Secure authentication powered by Auth0" : 
+                `🔒 Secure authentication powered by Auth0 ${isCodespaces ? '(Codespaces Ready)' : ''}` : 
                 "🔧 Please configure Auth0 credentials"
               }
             </p>
@@ -163,6 +194,17 @@ const Auth: React.FC = () => {
 
         {/* Info Section */}
         <div className="mt-6 bg-white/60 backdrop-blur-sm rounded-xl p-6 border border-slate-200">
+          {isCodespaces && (
+            <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <p className="font-inter text-sm text-yellow-800">
+                <strong>📝 GitHub Codespaces Setup:</strong><br/>
+                1. Copy your current URL: <code className="bg-white px-1 rounded text-xs">{currentOrigin}</code><br/>
+                2. Add it to Auth0 settings (see above)<br/>
+                3. Also add wildcard patterns for future Codespaces<br/>
+                4. Refresh this page after updating Auth0
+              </p>
+            </div>
+          )}
           <h3 className="font-cinzel font-semibold text-lg text-slate-800 mb-3">
             New User Benefits:
           </h3>

@@ -28,11 +28,17 @@ const Auth0Wrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => 
   const domain = import.meta.env.VITE_AUTH0_DOMAIN || '';
   const clientId = import.meta.env.VITE_AUTH0_CLIENT_ID || '';
   
+  // Get the current origin, which works for localhost, Codespaces, and other environments
+  const redirectUri = window.location.origin;
+  
   console.log('🔐 Auth0 Environment Variables:', {
     domain: domain || '❌ MISSING',
     clientId: clientId ? '✅ SET' : '❌ MISSING',
     domainValid: domain.includes('auth0.com'),
-    clientIdLength: clientId.length
+    clientIdLength: clientId.length,
+    redirectUri: redirectUri,
+    isCodespaces: window.location.hostname.includes('github.dev') || window.location.hostname.includes('codespaces'),
+    isLocalhost: window.location.hostname === 'localhost'
   });
 
   const isAuth0Configured = domain && clientId && domain.includes('auth0.com');
@@ -53,19 +59,20 @@ const Auth0Wrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => 
       domain={domain}
       clientId={clientId}
       authorizationParams={{
-        redirect_uri: window.location.origin,
+        redirect_uri: redirectUri,
         scope: "openid profile email",
-        prompt: "login"
+        audience: undefined,
+        prompt: "select_account"
       }}
       cacheLocation="localstorage"
       useRefreshTokens={true}
+      skipRedirectCallback={window.location.search.includes('code=')}
       onRedirectCallback={(appState) => {
         console.log('🔄 Auth0 Redirect Callback:', appState);
         window.history.replaceState({}, document.title, window.location.pathname);
       }}
       onError={(error) => {
         console.error('🚨 Auth0 Error:', error);
-        setError(`Auth0 Error: ${error.message}`);
       }}
     >
       <AuthProviderContent isConfigured={true}>{children}</AuthProviderContent>
