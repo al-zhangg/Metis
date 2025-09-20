@@ -131,8 +131,20 @@ const Auth: React.FC = () => {
           {/* Current URL Info for Auth0 Setup */}
           <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
             <p className="font-inter text-sm text-blue-800">
-              <strong>📋 For Auth0 Setup:</strong><br/>
-              Add this URL to your Auth0 "Allowed Callback URLs":<br/>
+              <strong>🔧 REQUIRED: Add to Auth0 Settings</strong><br/>
+              Go to <a href="https://manage.auth0.com/dashboard" target="_blank" className="underline">Auth0 Dashboard</a> → Your App → Settings<br/>
+              <br/>
+              <strong>Allowed Callback URLs:</strong><br/>
+              <code className="bg-white px-2 py-1 rounded text-xs break-all">
+                {window.location.origin}
+              </code>
+              <br/><br/>
+              <strong>Allowed Web Origins:</strong><br/>
+              <code className="bg-white px-2 py-1 rounded text-xs break-all">
+                {window.location.origin}
+              </code>
+              <br/><br/>
+              <strong>Allowed Logout URLs:</strong><br/>
               <code className="bg-white px-2 py-1 rounded text-xs break-all">
                 {window.location.origin}
               </code>
