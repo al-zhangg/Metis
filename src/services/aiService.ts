@@ -1,183 +1,274 @@
-// AI Service for Metis - Powered by Cerebras or compatible AI API
-interface HabitClassification {
-  category: 'health' | 'learning' | 'productivity' | 'mindfulness' | 'social' | 'creativity';
-  difficulty: 'easy' | 'medium' | 'hard';
-  suggestedFrequency: 'daily' | 'weekly' | 'bi-weekly';
-  mythicTitle: string;
-  wisdom: string;
-}
+import { supabase } from './supabaseClient';
+import { aiService } from './aiService';
+import type { Habit, JournalEntry, Quest, UserProfile } from './supabaseClient';
 
-interface JournalInsight {
-  mood: 'positive' | 'neutral' | 'negative' | 'mixed';
-  obstacles: string[];
-  mythicAdvice: string;
-  oracleTitle: string;
-  actionableSteps: string[];
-}
+// Enhanced API service with AI integration
+class EnhancedApiService {
+  private userId: string = '1'; // Mock user ID for development
 
-interface GoalAdjustment {
-  recommendation: 'increase' | 'maintain' | 'decrease' | 'pause';
-  reason: string;
-  mythicGuidance: string;
-  adjustedTarget: string;
-}
-
-class AIService {
-  private apiUrl: string;
-  private apiKey: string;
-  private cache: Map<string, any> = new Map();
-
-  constructor() {
-    this.apiUrl = import.meta.env.VITE_AI_API_URL || '';
-    this.apiKey = import.meta.env.VITE_AI_API_KEY || '';
-    
-    // Validate configuration
-    if (!this.apiUrl || !this.apiKey) {
-      console.warn('AI Service: Missing API URL or API Key. Using fallback responses.');
-    }
-  }
-
-  private async makeAIRequest(prompt: string, systemPrompt: string): Promise<any> {
-    const cacheKey = `${systemPrompt}-${prompt}`;
-    
-    // Check cache first
-    if (this.cache.has(cacheKey)) {
-      return this.cache.get(cacheKey);
-    }
-    
-    // If no API configuration, use fallback immediately
-    if (!this.apiUrl || !this.apiKey) {
-      console.warn('AI Service: No API configuration found, using fallback response');
-      return this.getFallbackResponse(prompt, systemPrompt);
-    }
-
+  // Habit Management with AI Classification
+  async createHabit(habitData: {
+    title: string;
+    description: string;
+    icon: string;
+  }): Promise<{ success: boolean; habit?: Habit; error?: string }> {
     try {
-      // Simulate AI API call - replace with actual Cerebras API
-      const response = await fetch(this.apiUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${this.apiKey}`,
-        },
-        body: JSON.stringify({
-          messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: prompt }
-          ],
-          temperature: 0.7,
-          max_tokens: 500
-        })
-      });
+      // Get AI classification
+      const classification = await aiService.classifyHabit(
+        habitData.title,
+        habitData.description
+      );
 
-      if (!response.ok) {
-        throw new Error('AI API request failed');
-      }
+      const newHabit: Partial<Habit> = {
+        user_id: this.userId,
+        title: habitData.title,
+        description: habitData.description,
+        icon: habitData.icon,
+        category: classification.category,
+        difficulty: classification.difficulty,
+        suggested_frequency: classification.suggestedFrequency,
+        mythic_title: classification.mythicTitle,
+        wisdom: classification.wisdom,
+        current_streak: 0,
+        completion_rate: 0,
+        status: 'active',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
 
-      const data = await response.json();
-      const result = JSON.parse(data.choices[0].message.content);
+      // In a real app, this would save to Supabase
+      // const { data, error } = await supabase.from('habits').insert(newHabit).select().single();
       
-      // Cache the result
-      this.cache.set(cacheKey, result);
-      
-      return result;
+      // Mock response for development
+      const mockHabit: Habit = {
+        id: Date.now(),
+        ...newHabit as Habit
+      };
+
+      return { success: true, habit: mockHabit };
     } catch (error) {
-      console.error('AI Service Error:', error);
-      // Return fallback response
-      return this.getFallbackResponse(prompt, systemPrompt);
+      console.error('Error creating habit:', error);
+      return { success: false, error: 'Failed to create habit' };
     }
   }
 
-  private getFallbackResponse(prompt: string, systemPrompt: string): any {
-    // Fallback responses when AI is unavailable
-    if (systemPrompt.includes('habit classification')) {
-      return {
-        category: 'health',
-        difficulty: 'medium',
-        suggestedFrequency: 'daily',
-        mythicTitle: 'Path of the Disciplined Warrior',
-        wisdom: 'Every small step builds the foundation of greatness.'
+  async getHabits(): Promise<Habit[]> {
+    try {
+      // In a real app: const { data } = await supabase.from('habits').select('*').eq('user_id', this.userId);
+      
+      // Mock data with AI-enhanced fields
+      return [
+        {
+          id: 1,
+          user_id: this.userId,
+          title: "Morning Meditation",
+          description: "Find inner peace like the ancient philosophers",
+          icon: "🧘‍♂️",
+          category: "mindfulness",
+          difficulty: "easy",
+          suggested_frequency: "daily",
+          mythic_title: "Path of the Serene Oracle",
+          wisdom: "In stillness, wisdom speaks loudest.",
+          current_streak: 7,
+          completion_rate: 85,
+          status: "active",
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        },
+        {
+          id: 2,
+          user_id: this.userId,
+          title: "Physical Training",
+          description: "Strengthen body and mind like Spartan warriors",
+          icon: "💪",
+          category: "health",
+          difficulty: "medium",
+          suggested_frequency: "daily",
+          mythic_title: "Forge of the Titan",
+          wisdom: "Strength grows in the crucible of discipline.",
+          current_streak: 12,
+          completion_rate: 92,
+          status: "active",
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        }
+      ];
+    } catch (error) {
+      console.error('Error fetching habits:', error);
+      return [];
+    }
+  }
+
+  async completeHabit(habitId: number): Promise<{ success: boolean; xpGained?: number }> {
+    try {
+      // In a real app, update the habit completion and streak
+      // Also trigger goal adjustment analysis
+      
+      return { success: true, xpGained: 25 };
+    } catch (error) {
+      console.error('Error completing habit:', error);
+      return { success: false };
+    }
+  }
+
+  // Journal Management with AI Insights
+  async createJournalEntry(entry: string): Promise<{ success: boolean; journalEntry?: JournalEntry; error?: string }> {
+    try {
+      // Get AI analysis
+      const insights = await aiService.analyzeJournal(entry);
+
+      const newEntry: Partial<JournalEntry> = {
+        user_id: this.userId,
+        entry,
+        mood: insights.mood,
+        obstacles: insights.obstacles,
+        mythic_advice: insights.mythicAdvice,
+        oracle_title: insights.oracleTitle,
+        actionable_steps: insights.actionableSteps,
+        created_at: new Date().toISOString(),
       };
-    }
-    
-    if (systemPrompt.includes('journal analysis')) {
-      return {
-        mood: 'neutral',
-        obstacles: ['Time management', 'Motivation'],
-        mythicAdvice: 'Like Odysseus facing the sirens, stay true to your course.',
-        oracleTitle: 'The Seeker\'s Reflection',
-        actionableSteps: ['Break tasks into smaller steps', 'Set specific times for habits']
+
+      // Mock response
+      const mockEntry: JournalEntry = {
+        id: Date.now(),
+        ...newEntry as JournalEntry
       };
+
+      return { success: true, journalEntry: mockEntry };
+    } catch (error) {
+      console.error('Error creating journal entry:', error);
+      return { success: false, error: 'Failed to create journal entry' };
     }
-
-    return {};
   }
 
-  async classifyHabit(habitName: string, description: string): Promise<HabitClassification> {
-    const systemPrompt = `You are Metis, the Greek goddess of wisdom and counsel. Analyze habits and provide structured classification with mythic wisdom. Always respond with valid JSON in this exact format:
-    {
-      "category": "health|learning|productivity|mindfulness|social|creativity",
-      "difficulty": "easy|medium|hard",
-      "suggestedFrequency": "daily|weekly|bi-weekly",
-      "mythicTitle": "A poetic title inspired by Greek mythology",
-      "wisdom": "A short, inspiring piece of wisdom (max 100 characters)"
-    }`;
-
-    const prompt = `Classify this habit:
-    Name: ${habitName}
-    Description: ${description}
-    
-    Consider behavioral science principles for difficulty assessment.`;
-
-    return await this.makeAIRequest(prompt, systemPrompt);
+  async getJournalEntries(): Promise<JournalEntry[]> {
+    try {
+      // Mock data with AI insights
+      return [
+        {
+          id: 1,
+          user_id: this.userId,
+          entry: "Today I reflected on Socrates' teaching that 'the unexamined life is not worth living.' This wisdom resonates deeply with my journey of self-improvement.",
+          mood: "positive",
+          obstacles: ["Self-doubt", "Time management"],
+          mythic_advice: "Like Athena's owl, wisdom comes to those who seek in darkness.",
+          oracle_title: "Wisdom of Self-Knowledge",
+          actionable_steps: ["Schedule daily reflection time", "Read one philosophical text weekly"],
+          created_at: new Date(Date.now() - 86400000).toISOString(),
+        },
+        {
+          id: 2,
+          user_id: this.userId,
+          entry: "Struggling with maintaining my habits lately. Perhaps this is a test, like the trials faced by heroes in ancient myths.",
+          mood: "mixed",
+          obstacles: ["Motivation", "Consistency"],
+          mythic_advice: "Even Hercules faced twelve labors; your trials forge strength.",
+          oracle_title: "The Hero's Challenge",
+          actionable_steps: ["Start with smallest habit", "Find accountability partner"],
+          created_at: new Date(Date.now() - 172800000).toISOString(),
+        }
+      ];
+    } catch (error) {
+      console.error('Error fetching journal entries:', error);
+      return [];
+    }
   }
 
-  async analyzeJournal(entry: string): Promise<JournalInsight> {
-    const systemPrompt = `You are the Oracle of Delphi, providing wisdom through journal analysis. Extract mood, identify obstacles, and offer mythic yet actionable advice. Always respond with valid JSON in this exact format:
-    {
-      "mood": "positive|neutral|negative|mixed",
-      "obstacles": ["obstacle1", "obstacle2"],
-      "mythicAdvice": "Short mythic wisdom (max 150 characters)",
-      "oracleTitle": "A mystical title for this reflection",
-      "actionableSteps": ["step1", "step2"]
-    }`;
-
-    const prompt = `Analyze this journal entry and provide insights:
-    "${entry}"
-    
-    Focus on emotional tone, challenges mentioned, and practical next steps.`;
-
-    return await this.makeAIRequest(prompt, systemPrompt);
+  // Dynamic Quest Generation
+  async getQuests(): Promise<Quest[]> {
+    try {
+      // In a real app, these would be dynamically generated based on user behavior
+      return [
+        {
+          id: 1,
+          user_id: this.userId,
+          title: "Complete 5 habits today",
+          description: "Channel your inner Hercules",
+          type: "daily",
+          xp_reward: 50,
+          progress: 2,
+          total: 5,
+          status: "active",
+          created_at: new Date().toISOString(),
+        },
+        {
+          id: 2,
+          user_id: this.userId,
+          title: "Maintain 7-day streak",
+          description: "Persistence like Odysseus",
+          type: "weekly",
+          xp_reward: 100,
+          progress: 7,
+          total: 7,
+          status: "completed",
+          created_at: new Date().toISOString(),
+        }
+      ];
+    } catch (error) {
+      console.error('Error fetching quests:', error);
+      return [];
+    }
   }
 
-  async suggestGoalAdjustment(
-    habitName: string, 
-    currentStreak: number, 
-    completionRate: number, 
-    recentEntries: string[]
-  ): Promise<GoalAdjustment> {
-    const systemPrompt = `You are Athena, goddess of wisdom and strategy. Analyze habit progress and suggest adaptive adjustments. Always respond with valid JSON in this exact format:
-    {
-      "recommendation": "increase|maintain|decrease|pause",
-      "reason": "Brief explanation of the recommendation",
-      "mythicGuidance": "Mythic wisdom about the adjustment (max 120 characters)",
-      "adjustedTarget": "Specific suggestion for the new target"
-    }`;
+  // Goal Adjustment Analysis
+  async analyzeHabitProgress(habitId: number): Promise<any> {
+    try {
+      // Get habit data and recent journal entries
+      const habits = await this.getHabits();
+      const habit = habits.find(h => h.id === habitId);
+      const journalEntries = await this.getJournalEntries();
+      
+      if (!habit) return null;
 
-    const prompt = `Analyze this habit progress:
-    Habit: ${habitName}
-    Current Streak: ${currentStreak} days
-    Completion Rate: ${completionRate}%
-    Recent Journal Mentions: ${recentEntries.join(', ')}
-    
-    Suggest whether to increase, maintain, decrease difficulty, or pause.`;
+      // Get AI recommendation
+      const adjustment = await aiService.suggestGoalAdjustment(
+        habit.title,
+        habit.current_streak,
+        habit.completion_rate,
+        journalEntries.map(e => e.entry).slice(0, 3)
+      );
 
-    return await this.makeAIRequest(prompt, systemPrompt);
+      return adjustment;
+    } catch (error) {
+      console.error('Error analyzing habit progress:', error);
+      return null;
+    }
   }
 
-  clearCache(): void {
-    this.cache.clear();
+  // User Profile
+  async getUserProfile(): Promise<UserProfile | null> {
+    try {
+      // Mock profile data
+      return {
+        id: this.userId,
+        username: "PhilosopherWarrior",
+        current_xp: 1250,
+        level: 8,
+        total_habits: 15,
+        achievements: [
+          {
+            id: 1,
+            title: "Wisdom Seeker",
+            description: "Complete 10 meditation sessions",
+            icon: "🦉",
+            unlocked_at: "2024-01-10"
+          },
+          {
+            id: 2,
+            title: "Oracle's Insight",
+            description: "Write 20 journal entries",
+            icon: "📜",
+            unlocked_at: "2024-01-12"
+          }
+        ],
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+      return null;
+    }
   }
 }
 
-export const aiService = new AIService();
-export type { HabitClassification, JournalInsight, GoalAdjustment };
+export const enhancedApi = new EnhancedApiService();
