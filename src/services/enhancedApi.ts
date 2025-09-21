@@ -1,6 +1,7 @@
 import { supabase } from './supabaseClient';
 import { isSupabaseConfigured } from './supabaseClient';
 import { aiService } from './aiService';
+import { useAuth } from '../contexts/AuthContext';
 import type { Habit, JournalEntry, Quest, UserProfile } from './supabaseClient';
 
 // Enhanced API service with AI integration
@@ -11,8 +12,17 @@ class EnhancedApiService {
     return this.currentUser?.sub || null;
   }
 
+  private getCurrentUserEmail(): string | null {
+    return this.currentUser?.email || null;
+  }
+
+  private getCurrentUserName(): string | null {
+    return this.currentUser?.name || this.currentUser?.email?.split('@')[0] || 'User';
+  }
+
   setCurrentUser(user: any) {
     this.currentUser = user;
+    console.log('Enhanced API: Current user set:', user?.sub);
   }
 
   // Habit Management with AI Classification
@@ -22,6 +32,8 @@ class EnhancedApiService {
     icon: string;
   }): Promise<{ success: boolean; habit?: Habit; error?: string }> {
     try {
+      console.log('Creating habit for user:', this.getCurrentUserId());
+      
       // Get AI classification
       const classification = await aiService.classifyHabit(
         habitData.title,
@@ -53,8 +65,13 @@ class EnhancedApiService {
           .select()
           .single();
         
-        if (error) throw error;
-        return { success: true, habit: data };
+        if (error) {
+          console.error('Supabase habit insert error:', error);
+          // Fall through to mock response
+        } else if (data) {
+          console.log('Habit saved to Supabase:', data);
+          return { success: true, habit: data };
+        }
       }
       
       // Mock response for development
@@ -63,6 +80,7 @@ class EnhancedApiService {
         ...newHabit as Habit
       };
 
+      console.log('Using mock habit:', mockHabit);
       return { success: true, habit: mockHabit };
     } catch (error) {
       console.error('Error creating habit:', error);
@@ -176,6 +194,8 @@ class EnhancedApiService {
   // Journal Management with AI Insights
   async createJournalEntry(entry: string): Promise<{ success: boolean; journalEntry?: JournalEntry; error?: string }> {
     try {
+      console.log('Creating journal entry for user:', this.getCurrentUserId());
+      
       // Get AI analysis
       const insights = await aiService.analyzeJournal(entry);
 
@@ -198,8 +218,13 @@ class EnhancedApiService {
           .select()
           .single();
         
-        if (error) throw error;
-        return { success: true, journalEntry: data };
+        if (error) {
+          console.error('Supabase journal insert error:', error);
+          // Fall through to mock response
+        } else if (data) {
+          console.log('Journal entry saved to Supabase:', data);
+          return { success: true, journalEntry: data };
+        }
       }
       
       // Mock response for development
@@ -208,6 +233,7 @@ class EnhancedApiService {
         ...newEntry as JournalEntry
       };
 
+      console.log('Using mock journal entry:', mockEntry);
       return { success: true, journalEntry: mockEntry };
     } catch (error) {
       console.error('Error creating journal entry:', error);
@@ -220,6 +246,8 @@ class EnhancedApiService {
       const userId = this.getCurrentUserId();
       if (!userId) return [];
 
+      console.log('Getting journal entries for user:', userId);
+
       // Use Supabase if configured
       if (isSupabaseConfigured() && supabase) {
         const { data, error } = await supabase
@@ -229,17 +257,23 @@ class EnhancedApiService {
           .order('created_at', { ascending: false })
           .limit(20);
           
-        if (error) throw error;
-        return data || [];
+        if (error) {
+          console.error('Supabase journal error:', error);
+          // Fall through to mock data
+        } else if (data) {
+          console.log('Journal entries loaded from Supabase:', data.length);
+          return data;
+        }
       }
       
       // Mock data with AI insights
-      return [
+      const mockEntries = [
         {
           id: 1,
           user_id: userId,
           entry: "Today I reflected on Socrates' teaching that 'the unexamined life is not worth living.' This wisdom resonates deeply with my journey of self-improvement.",
           mood: "positive",
+          sentiment: "positive",
           obstacles: ["Self-doubt", "Time management"],
           mythic_advice: "Like Athena's owl, wisdom comes to those who seek in darkness.",
           oracle_title: "Wisdom of Self-Knowledge",
@@ -251,6 +285,7 @@ class EnhancedApiService {
           user_id: userId,
           entry: "Struggling with maintaining my habits lately. Perhaps this is a test, like the trials faced by heroes in ancient myths.",
           mood: "mixed",
+          sentiment: "mixed",
           obstacles: ["Motivation", "Consistency"],
           mythic_advice: "Even Hercules faced twelve labors; your trials forge strength.",
           oracle_title: "The Hero's Challenge",
@@ -258,6 +293,9 @@ class EnhancedApiService {
           created_at: new Date(Date.now() - 172800000).toISOString(),
         }
       ];
+      
+      console.log('Using mock journal entries:', mockEntries.length);
+      return mockEntries;
     } catch (error) {
       console.error('Error fetching journal entries:', error);
       return [];
@@ -346,6 +384,8 @@ class EnhancedApiService {
       const userId = this.getCurrentUserId();
       if (!userId) return null;
 
+      console.log('Getting profile for user:', userId);
+
       // Use Supabase if configured
       if (isSupabaseConfigured() && supabase) {
         const { data, error } = await supabase
@@ -354,15 +394,20 @@ class EnhancedApiService {
           .eq('id', userId)
           .single();
           
-        if (error && error.code !== 'PGRST116') throw error;
-        return data;
+        if (error && error.code !== 'PGRST116') {
+          console.error('Supabase profile error:', error);
+          // Fall through to mock data
+        } else if (data) {
+          console.log('Profile loaded from Supabase:', data);
+          return data;
+        }
       }
       
       // Mock profile data
-      return {
+      const mockProfile = {
         id: userId,
-        username: "PhilosopherWarrior",
-        email: "user@example.com",
+        username: this.getCurrentUserName() || "PhilosopherWarrior",
+        email: this.getCurrentUserEmail() || "user@example.com",
         current_xp: 1250,
         level: 8,
         total_habits: 15,
@@ -385,6 +430,9 @@ class EnhancedApiService {
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
+      
+      console.log('Using mock profile:', mockProfile);
+      return mockProfile;
     } catch (error) {
       console.error('Error fetching user profile:', error);
       return null;
