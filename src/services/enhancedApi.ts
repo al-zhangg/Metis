@@ -6,7 +6,8 @@ import type { Habit, JournalEntry, Quest, UserProfile } from './supabaseClient';
 
 // Enhanced API service with AI integration
 class EnhancedApiService {
-  private currentUser: any = null;
+  private currentUser: any = null
+  private habits: Habit[] = [] // Store habits locally;
 
   private getCurrentUserId(): string | null {
     return this.currentUser?.sub || null;
@@ -80,7 +81,11 @@ class EnhancedApiService {
         ...newHabit as Habit
       };
 
+      // Add to local habits array
+      this.habits.unshift(mockHabit); // Add to beginning of array
+
       console.log('Using mock habit:', mockHabit);
+      console.log('Updated habits array:', this.habits);
       return { success: true, habit: mockHabit };
     } catch (error) {
       console.error('Error creating habit:', error);
@@ -91,10 +96,11 @@ class EnhancedApiService {
   async getHabits(): Promise<Habit[]> {
     try {
       const userId = this.getCurrentUserId();
-      if (!userId) return [];
+      console.log('Getting habits for user:', userId);
+      console.log('Current habits array:', this.habits);
 
       // Use Supabase if configured, otherwise use mock data
-      if (isSupabaseConfigured() && supabase) {
+      if (isSupabaseConfigured() && supabase && userId) {
         const { data, error } = await supabase
           .from('habits')
           .select('*')
@@ -105,43 +111,50 @@ class EnhancedApiService {
         return data || [];
       }
       
-      // Mock data with AI-enhanced fields
-      return [
-        {
-          id: 1,
-          user_id: userId,
-          title: "Morning Meditation",
-          description: "Find inner peace like the ancient philosophers",
-          icon: "🧘‍♂️",
-          category: "mindfulness",
-          difficulty: "easy",
-          suggested_frequency: "daily",
-          mythic_title: "Path of the Serene Oracle",
-          wisdom: "In stillness, wisdom speaks loudest.",
-          current_streak: 7,
-          completion_rate: 85,
-          status: "active",
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        },
-        {
-          id: 2,
-          user_id: userId,
-          title: "Physical Training",
-          description: "Strengthen body and mind like Spartan warriors",
-          icon: "💪",
-          category: "health",
-          difficulty: "medium",
-          suggested_frequency: "daily",
-          mythic_title: "Forge of the Titan",
-          wisdom: "Strength grows in the crucible of discipline.",
-          current_streak: 12,
-          completion_rate: 92,
-          status: "active",
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        }
-      ];
+      // Return locally stored habits, or default examples if none exist
+      if (this.habits.length === 0) {
+        console.log('No habits found, initializing with defaults');
+        // Initialize with default examples for first-time users
+        this.habits = [
+          {
+            id: 1,
+            user_id: userId || 'anonymous',
+            title: "Morning Meditation",
+            description: "Find inner peace like the ancient philosophers",
+            icon: "🧘‍♂️",
+            category: "mindfulness",
+            difficulty: "easy",
+            suggested_frequency: "daily",
+            mythic_title: "Path of the Serene Oracle",
+            wisdom: "In stillness, wisdom speaks loudest.",
+            current_streak: 7,
+            completion_rate: 85,
+            status: "active",
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          },
+          {
+            id: 2,
+            user_id: userId || 'anonymous',
+            title: "Physical Training",
+            description: "Strengthen body and mind like Spartan warriors",
+            icon: "💪",
+            category: "health",
+            difficulty: "medium",
+            suggested_frequency: "daily",
+            mythic_title: "Forge of the Titan",
+            wisdom: "Strength grows in the crucible of discipline.",
+            current_streak: 12,
+            completion_rate: 92,
+            status: "active",
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          }
+        ];
+      }
+      
+      console.log('Returning habits:', this.habits);
+      return this.habits;
     } catch (error) {
       console.error('Error fetching habits:', error);
       return [];

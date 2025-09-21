@@ -7,21 +7,32 @@ import XPBar from '../components/XPBar';
 import HabitProgressAnalysis from '../components/HabitProgressAnalysis';
 import { enhancedApi } from '../services/enhancedApi';
 import { dailyTracker } from '../services/dailyTracker';
+import { useAuth } from '../contexts/AuthContext';
 import type { Habit, Quest } from '../services/supabaseClient';
 
 const Dashboard: React.FC = () => {
+  const { user } = useAuth();
   const [habits, setHabits] = useState<Habit[]>([]);
   const [quests, setQuests] = useState<Quest[]>([]);
   const [loading, setLoading] = useState(true);
   const [completingHabit, setCompletingHabit] = useState<number | null>(null);
 
+  // Ensure user is set in enhancedApi
+  useEffect(() => {
+    if (user) {
+      enhancedApi.setCurrentUser(user);
+    }
+  }, [user]);
+
   useEffect(() => {
     const fetchData = async () => {
       try {
+        console.log('Dashboard: Fetching data...');
         const [habitsData, questsData] = await Promise.all([
           enhancedApi.getHabits(),
           enhancedApi.getQuests()
         ]);
+        console.log('Dashboard: Received habits:', habitsData);
         setHabits(habitsData);
         setQuests(questsData);
       } catch (error) {
@@ -32,7 +43,20 @@ const Dashboard: React.FC = () => {
     };
 
     fetchData();
-  }, []);
+    
+    // Listen for visibility change to refresh dashboard when user returns
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        fetchData();
+      }
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [user]);
 
   const handleCompleteHabit = async (habitId: number) => {
     if (dailyTracker.isCompletedToday(habitId)) {
