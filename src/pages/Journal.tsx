@@ -25,6 +25,22 @@ const Journal: React.FC = () => {
     };
 
     fetchEntries();
+    // subscribe to journal updates
+    const unsub = enhancedApi.addJournalListener((items) => {
+      console.debug('Journal page received journal listener update, count=', items.length);
+      setEntries(items);
+    });
+    // also listen to global event for cross-tab updates
+    const handleEvent = (e: any) => {
+      console.debug('Journal page received metis:journal-updated event', e);
+      enhancedApi.getJournalEntries().then(setEntries).catch(console.error);
+    };
+    window.addEventListener('metis:journal-updated', handleEvent as EventListener);
+
+    return () => {
+      try { unsub(); } catch (e) {}
+      window.removeEventListener('metis:journal-updated', handleEvent as EventListener);
+    };
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -35,8 +51,10 @@ const Journal: React.FC = () => {
     try {
       const result = await enhancedApi.createJournalEntry(newEntry.trim());
       if (result.success) {
-        setEntries(prev => [result.journalEntry!, ...prev]);
-        setNewEntry('');
+  // reload entries from the canonical source to avoid duplicates
+  const journalData = await enhancedApi.getJournalEntries();
+  setEntries(journalData);
+  setNewEntry('');
       }
     } catch (error) {
       console.error('Failed to add journal entry:', error);

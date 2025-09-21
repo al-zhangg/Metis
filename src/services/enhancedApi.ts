@@ -10,6 +10,8 @@ class EnhancedApiService {
   private habits: Habit[] = [] // Store habits locally
   private habitsListeners: Array<(habits: Habit[]) => void> = [];
   private questsListeners: Array<(quests: Quest[]) => void> = [];
+  private journalEntries: JournalEntry[] = [];
+  private journalListeners: Array<(entries: JournalEntry[]) => void> = [];
 
   // Load habits from localStorage
   private loadHabitsFromStorage(): void {
@@ -113,8 +115,51 @@ class EnhancedApiService {
     // Load habits for the newly-set user into the in-memory cache
     try {
       this.loadHabitsFromStorage();
+      // Load per-user journal entries as well
+      try { this.loadJournalFromStorage(); } catch (e) { console.warn('Failed to load journal for new user:', e); }
     } catch (e) {
       console.warn('Failed to load habits for new user:', e);
+    }
+  }
+
+  // Subscribe to journal changes. Returns an unsubscribe function.
+  addJournalListener(fn: (entries: JournalEntry[]) => void) {
+    this.journalListeners.push(fn);
+    try { fn(this.journalEntries); } catch (e) { console.warn('journal listener error:', e); }
+    return () => {
+      this.journalListeners = this.journalListeners.filter(l => l !== fn);
+    };
+  }
+
+  // Journal persistence helpers
+  private makeJournalKey(): string {
+    const userId = this.getCurrentUserId() || 'anonymous';
+    return `metis_journal_${userId}`;
+  }
+
+  private loadJournalFromStorage(): void {
+    try {
+      const key = this.makeJournalKey();
+      const stored = localStorage.getItem(key);
+      if (stored) {
+        this.journalEntries = JSON.parse(stored);
+        console.log(`Loaded journal entries from storage (${key}):`, this.journalEntries.length);
+      } else {
+        this.journalEntries = [];
+      }
+    } catch (error) {
+      console.error('Error loading journal entries from storage:', error);
+      this.journalEntries = [];
+    }
+  }
+
+  private saveJournalToStorage(): void {
+    try {
+      const key = this.makeJournalKey();
+      localStorage.setItem(key, JSON.stringify(this.journalEntries));
+      console.debug('[enhancedApi] Saved journal to storage', { key, count: this.journalEntries.length });
+    } catch (error) {
+      console.error('Error saving journal entries to storage:', error);
     }
   }
 
@@ -414,8 +459,18 @@ class EnhancedApiService {
         id: Date.now(),
       };
 
-      console.log('Using mock journal entry:', mockEntry);
-      return { success: true, journalEntry: mockEntry };
+  // Persist in local in-memory array and localStorage
+  this.journalEntries.unshift(mockEntry);
+  this.saveJournalToStorage();
+
+  // Notify journal listeners
+  try { this.journalListeners.forEach(fn => { try { fn(this.journalEntries); } catch (e) { console.warn('journal listener call failed', e); } }); } catch (e) { console.warn('Failed to notify journal listeners:', e); }
+
+  // Dispatch an event for other parts of the app
+  try { window.dispatchEvent(new CustomEvent('metis:journal-updated', { detail: { userId: this.getCurrentUserId() } })); } catch (e) {}
+
+  console.log('Using mock journal entry:', mockEntry);
+  return { success: true, journalEntry: mockEntry };
     } catch (error) {
       console.error('Error creating journal entry:', error);
       return { success: false, error: 'Failed to create journal entry' };
@@ -447,36 +502,10 @@ class EnhancedApiService {
         }
       }
       
-      // Mock data with AI insights
-      const mockEntries = [
-        {
-          id: 1,
-          user_id: userId,
-          entry: "Today I reflected on Socrates' teaching that 'the unexamined life is not worth living.' This wisdom resonates deeply with my journey of self-improvement.",
-          mood: "positive",
-          sentiment: "positive",
-          obstacles: ["Self-doubt", "Time management"],
-          mythic_advice: "Like Athena's owl, wisdom comes to those who seek in darkness.",
-          oracle_title: "Wisdom of Self-Knowledge",
-          actionable_steps: ["Schedule daily reflection time", "Read one philosophical text weekly"],
-          created_at: new Date(Date.now() - 86400000).toISOString(),
-        },
-        {
-          id: 2,
-          user_id: userId,
-          entry: "Struggling with maintaining my habits lately. Perhaps this is a test, like the trials faced by heroes in ancient myths.",
-          mood: "mixed",
-          sentiment: "mixed",
-          obstacles: ["Motivation", "Consistency"],
-          mythic_advice: "Even Hercules faced twelve labors; your trials forge strength.",
-          oracle_title: "The Hero's Challenge",
-          actionable_steps: ["Start with smallest habit", "Find accountability partner"],
-          created_at: new Date(Date.now() - 172800000).toISOString(),
-        }
-      ];
-      
-      console.log('Using mock journal entries:', mockEntries.length);
-      return mockEntries;
+  // Fallback: load from per-user localStorage
+  this.loadJournalFromStorage();
+  console.debug('[enhancedApi] returning journal entries count=', this.journalEntries.length);
+  return this.journalEntries;
     } catch (error) {
       console.error('Error fetching journal entries:', error);
       return [];

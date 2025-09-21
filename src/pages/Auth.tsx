@@ -32,16 +32,13 @@ const Auth: React.FC = () => {
         <div className="text-center mb-8">
           <div className="relative inline-block">
             <img
-              src="https://images.pexels.com/photos/8828489/pexels-photo-8828489.jpeg?auto=compress&cs=tinysrgb&w=400"
+              src="/images/metis_logo.svg"
               alt="Greek Temple"
-              className="w-24 h-24 rounded-full object-cover mx-auto mb-4 border-4 border-slate-300 shadow-lg"
+              className="w-24 h-24 rounded-half object-cover mx-auto mb-4 border-4 border-slate-300 shadow-lg"
             />
-            <div className="absolute -top-2 -right-2 w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center shadow-lg">
-              <Crown className="w-4 h-4 text-white" />
-            </div>
           </div>
           <h1 className="font-cinzel font-bold text-4xl text-slate-800 mb-2">Metis</h1>
-          <p className="font-inter text-slate-600 mb-6">Ancient Wisdom • Modern Habits</p>
+          <p className="font-inter text-slate-600 mb-6">Godlike productivity, gamified.</p>
 
           <div className="grid grid-cols-3 gap-4 mb-8">
             <div className="text-center">
@@ -57,8 +54,8 @@ const Auth: React.FC = () => {
               <p className="font-inter text-xs text-slate-600">Epic Quests</p>
             </div>
             <div className="text-center">
-              <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                <Scroll className="w-6 h-6 text-slate-600" />
+              <div className="w-12 h-12 bg-rose-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                <Scroll className="w-6 h-6 text-rose-600" />
               </div>
               <p className="font-inter text-xs text-slate-600">Oracle Journal</p>
             </div>
@@ -68,8 +65,8 @@ const Auth: React.FC = () => {
         <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-8 border border-slate-200">
           <div className="text-center mb-6">
             <LogIn className="w-12 h-12 text-blue-500 mx-auto mb-4" />
-            <h2 className="font-cinzel font-semibold text-2xl text-slate-800 mb-2">Enter the Realm</h2>
-            <p className="font-inter text-slate-600">Sign in to begin your journey of wisdom and self-improvement.</p>
+            <h2 className="font-cinzel font-semibold text-2xl text-slate-800 mb-2">Log In</h2>
+            <p className="font-inter text-slate-600">Begin your journey of self-improvement.</p>
           </div>
 
           {error && (
