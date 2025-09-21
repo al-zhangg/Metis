@@ -47,6 +47,21 @@ const Dashboard: React.FC = () => {
     };
 
     fetchData();
+    // Subscribe to enhancedApi in-memory habit changes for instant UI updates
+    const unsubscribe = enhancedApi.addHabitsListener((newHabits: Habit[]) => {
+      console.debug('Dashboard: enhancedApi in-memory habits updated', newHabits.length);
+      setHabits(newHabits);
+    });
+    const unsubscribeQuests = enhancedApi.addQuestsListener((newQuests) => {
+      console.debug('Dashboard: quests updated', newQuests.length);
+      setQuests(newQuests);
+    });
+  // Listen for app-level habit updates (e.g., when AddHabit creates a habit)
+    const handleHabitsUpdated = (e?: Event) => {
+      console.debug('Dashboard received metis:habits-updated event', e);
+      fetchData();
+    };
+    window.addEventListener('metis:habits-updated', handleHabitsUpdated as EventListener);
     
     // Listen for visibility change to refresh dashboard when user returns
     const handleVisibilityChange = () => {
@@ -58,6 +73,9 @@ const Dashboard: React.FC = () => {
     document.addEventListener('visibilitychange', handleVisibilityChange);
     
     return () => {
+  unsubscribe();
+  unsubscribeQuests();
+      window.removeEventListener('metis:habits-updated', handleHabitsUpdated as EventListener);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, [user]);

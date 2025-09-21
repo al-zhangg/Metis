@@ -5,6 +5,7 @@ import Button from '../components/Button';
 import Modal from '../components/Modal';
 import AIInsightCard from '../components/AIInsightCard';
 import { enhancedApi } from '../services/enhancedApi';
+import { useNavigate } from 'react-router-dom';
 import type { HabitClassification } from '../services/aiService';
 
 const AddHabit: React.FC = () => {
@@ -36,8 +37,10 @@ const AddHabit: React.FC = () => {
     }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const navigate = useNavigate();
+
+  const handleSubmit = async (e?: React.FormEvent) => {
+  if (e && typeof (e as any).preventDefault === 'function') (e as any).preventDefault();
     if (!formData.title || !formData.goal) {
       console.error('Missing required fields');
       return;
@@ -52,7 +55,7 @@ const AddHabit: React.FC = () => {
         icon: formData.icon
       });
       
-      if (result.success) {
+  if (result.success) {
         setShowModal(true);
         setFormData({
           title: '',
@@ -63,6 +66,14 @@ const AddHabit: React.FC = () => {
         });
         setShowPreview(false);
         setAiClassification(null);
+        try {
+          console.debug('AddHabit: dispatching metis:habits-updated after create');
+          window.dispatchEvent(new CustomEvent('metis:habits-updated', { detail: { userId: null } }));
+        } catch (e) {
+          console.warn('AddHabit: failed to dispatch habits-updated', e);
+        }
+        // Navigate back to dashboard so it reloads
+        navigate('/dashboard');
       } else {
         console.error('Failed to create habit:', result.error);
       }
@@ -251,7 +262,7 @@ const AddHabit: React.FC = () => {
           <div className="flex gap-4">
             <Button
               text={isSubmitting ? "Creating..." : "Create Habit"}
-              onClick={handleSubmit}
+              onClick={(ev?: React.MouseEvent<HTMLButtonElement>) => handleSubmit(ev as any)}
               variant="primary"
               disabled={isSubmitting || !formData.title || !formData.goal}
               className="flex-1"

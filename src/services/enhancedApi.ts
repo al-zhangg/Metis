@@ -8,6 +8,8 @@ import type { Habit, JournalEntry, Quest, UserProfile } from './supabaseClient';
 class EnhancedApiService {
   private currentUser: any = null
   private habits: Habit[] = [] // Store habits locally
+  private habitsListeners: Array<(habits: Habit[]) => void> = [];
+  private questsListeners: Array<(quests: Quest[]) => void> = [];
 
   // Load habits from localStorage
   private loadHabitsFromStorage(): void {
@@ -112,6 +114,25 @@ class EnhancedApiService {
     }
   }
 
+  // Subscribe to habit changes. Returns an unsubscribe function.
+  addHabitsListener(fn: (habits: Habit[]) => void) {
+    this.habitsListeners.push(fn);
+    // Immediately call with current value
+    try { fn(this.habits); } catch (e) { console.warn('habits listener error:', e); }
+    return () => {
+      this.habitsListeners = this.habitsListeners.filter(l => l !== fn);
+    };
+  }
+
+  // Subscribe to quests changes. Returns an unsubscribe function.
+  addQuestsListener(fn: (quests: Quest[]) => void) {
+    this.questsListeners.push(fn);
+    try { fn(this.loadQuestsFromStorage()); } catch (e) { console.warn('quests listener error:', e); }
+    return () => {
+      this.questsListeners = this.questsListeners.filter(l => l !== fn);
+    };
+  }
+
   // Habit Management with AI Classification
   async createHabit(habitData: {
     title: string;
@@ -173,6 +194,47 @@ class EnhancedApiService {
       // Save to localStorage
       this.saveHabitsToStorage();
 
+      // Notify in-memory listeners synchronously
+      try {
+        this.habitsListeners.forEach(fn => { try { fn(this.habits); } catch (e) { console.warn('habits listener call failed', e); } });
+      } catch (e) {
+        console.warn('Failed to notify habits listeners:', e);
+      }
+
+      // Create a simple related quest when a habit is added (development fallback)
+      try {
+        const userId = this.getCurrentUserId() || 'anonymous';
+        const newQuest: Quest = {
+          id: Date.now(),
+          user_id: userId,
+          title: `Complete ${mockHabit.title} today`,
+          description: `Daily quest to complete ${mockHabit.title}`,
+          type: 'daily',
+          xp_reward: 25,
+          progress: 0,
+          total: 1,
+          status: 'active',
+          created_at: new Date().toISOString(),
+        };
+        const existing = this.loadQuestsFromStorage();
+        existing.unshift(newQuest);
+        this.saveQuestsToStorage(existing);
+        // notify listeners
+        this.questsListeners.forEach(fn => { try { fn(existing); } catch (e) { console.warn('quests listener call failed', e); } });
+        // dispatch event
+        try { window.dispatchEvent(new CustomEvent('metis:quests-updated', { detail: { userId } })); } catch (e) { /* ignore */ }
+      } catch (e) {
+        console.warn('Failed to create related quest:', e);
+      }
+
+      // Notify other parts of the app that habits changed
+      try {
+        const detail = { userId: this.getCurrentUserId() };
+        console.debug('Dispatching metis:habits-updated', detail);
+        window.dispatchEvent(new CustomEvent('metis:habits-updated', { detail }));
+      } catch (e) {
+        console.warn('Could not dispatch habits-updated event:', e);
+      }
       console.log('Using mock habit:', mockHabit);
       console.log('Updated habits array:', this.habits);
       return { success: true, habit: mockHabit };
@@ -190,14 +252,22 @@ class EnhancedApiService {
 
       // Use Supabase if configured, otherwise use mock data
       if (isSupabaseConfigured() && supabase && userId) {
-        const { data, error } = await supabase
-          .from('habits')
-          .select('*')
-          .eq('user_id', userId)
-          .order('created_at', { ascending: false });
-          
-        if (error) throw error;
-        return data || [];
+        try {
+          const { data, error } = await supabase
+            .from('habits')
+            .select('*')
+            .eq('user_id', userId)
+            .order('created_at', { ascending: false });
+
+          if (error) {
+            // Don't let Supabase schema issues stop local fallback
+            console.warn('Supabase habit fetch error, falling back to local storage:', error);
+          } else if (data) {
+            return data || [];
+          }
+        } catch (err) {
+          console.warn('Unexpected Supabase error fetching habits, falling back to local storage:', err);
+        }
       }
       
       // Load from localStorage first
