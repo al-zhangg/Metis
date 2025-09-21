@@ -189,13 +189,84 @@ const Dashboard: React.FC = () => {
                 const completionRate = dailyTracker.getCompletionRate(habit.id);
                 
                 return (
-                  <Card
+                  <div
                     key={habit.id}
-                    title={habit.mythic_title || habit.title}
-                    description={habit.wisdom || habit.description}
-                    icon={habit.icon}
-                    status={isCompleted ? 'completed' : 'active'}
+                    className={`
+                      relative p-6 rounded-xl border-2 shadow-lg transform transition-all duration-300
+                      hover:scale-102 hover:shadow-xl backdrop-blur-sm
+                      ${isCompleted ? 'border-laurel-green bg-green-50' : 'border-aegean-blue/20 bg-white'}
+                    `}
                   >
+                    {/* Status indicator */}
+                    <div className="absolute top-4 right-4">
+                      {isCompleted ? (
+                        <div className="w-3 h-3 bg-laurel-green rounded-full animate-pulse"></div>
+                      ) : (
+                        <div className="w-3 h-3 bg-aegean-blue rounded-full animate-glow"></div>
+                      )}
+                    </div>
+
+                    {/* Card header */}
+                    <div className="flex items-start gap-4 mb-4">
+                      <div className="text-3xl animate-float">
+                        {habit.icon}
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-cinzel font-semibold text-lg text-midnight mb-2">
+                          {habit.title}
+                        </h3>
+                        <p className="font-inter text-storm-gray text-sm leading-relaxed mb-3">
+                          {habit.description}
+                        </p>
+                        
+                        {/* AI Wisdom */}
+                        {habit.wisdom && (
+                          <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-3">
+                            <div className="flex items-center gap-2 mb-1">
+                              <div className="w-2 h-2 bg-amber-400 rounded-full animate-pulse"></div>
+                              <span className="font-inter font-medium text-xs text-amber-700 uppercase tracking-wide">
+                                Oracle's Wisdom
+                              </span>
+                            </div>
+                            <p className="font-inter text-amber-800 text-sm italic">
+                              "{habit.wisdom}"
+                            </p>
+                          </div>
+                        )}
+
+                        {/* AI Actionable Steps */}
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2 text-xs text-gray-600">
+                            <Target className="w-3 h-3" />
+                            <span className="font-inter font-medium uppercase tracking-wide">
+                              AI Insights
+                            </span>
+                          </div>
+                          <div className="grid grid-cols-1 gap-2 text-xs">
+                            <div className="flex items-center gap-2">
+                              <span className="w-1.5 h-1.5 bg-blue-400 rounded-full"></span>
+                              <span className="font-inter text-gray-700">
+                                <strong>Category:</strong> {habit.category}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="w-1.5 h-1.5 bg-purple-400 rounded-full"></span>
+                              <span className="font-inter text-gray-700">
+                                <strong>Difficulty:</strong> {habit.difficulty}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="w-1.5 h-1.5 bg-green-400 rounded-full"></span>
+                              <span className="font-inter text-gray-700">
+                                <strong>Frequency:</strong> {habit.suggested_frequency}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Card content */}
                     <div className="space-y-3">
                       {/* Streak and completion info */}
                       <div className="flex items-center justify-between text-sm">
@@ -238,7 +309,11 @@ const Dashboard: React.FC = () => {
                         />
                       )}
                     </div>
-                  </Card>
+
+                    {/* Decorative elements */}
+                    <div className="absolute bottom-2 left-2 w-2 h-2 bg-bronze/20 rounded-full"></div>
+                    <div className="absolute top-2 left-2 w-1 h-1 bg-gold/30 rounded-full"></div>
+                  </div>
                 );
               })}
             </div>
