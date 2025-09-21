@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import { User, Trophy, Crown } from 'lucide-react';
 import XPBar from '../components/XPBar';
 import Card from '../components/Card';
@@ -8,23 +10,44 @@ import type { UserProfile } from '../services/supabaseClient';
 const Profile: React.FC = () => {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const location = useLocation();
+  const { user: authUserProfile, loading: authLoading, isAuthenticated } = useAuth();
 
   useEffect(() => {
-    const fetchProfile = async () => {
+    let cancelled = false;
+
+    const loadProfile = async () => {
+      setLoading(true);
+      setError(null);
+
       try {
-        console.log('Profile: Fetching profile data...');
+        // If AuthContext is still initializing, wait for it
+        if (authLoading) return;
+
+        // If AuthContext already has the profile, use it
+        if (isAuthenticated && authUserProfile) {
+          if (!cancelled) setProfile(authUserProfile);
+          return;
+        }
+
+        // Otherwise attempt to fetch from the API
         const profileData = await enhancedApi.getUserProfile();
-        console.log('Profile: Received data:', profileData);
-        setProfile(profileData);
-      } catch (error) {
-        console.error('Failed to fetch profile:', error);
+        if (!cancelled) setProfile(profileData);
+      } catch (err) {
+        console.error('Failed to fetch profile:', err);
+        if (!cancelled) setError(err instanceof Error ? err.message : String(err));
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
 
-    fetchProfile();
-  }, []);
+    loadProfile();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [location.pathname, authLoading, isAuthenticated, authUserProfile]);
 
   if (loading) {
     return (
