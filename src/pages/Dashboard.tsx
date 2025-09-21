@@ -349,66 +349,8 @@ const Dashboard: React.FC = () => {
         </div>
 
         {/* Divine Quests */}
-        <div>
-          <h2 className="font-cinzel font-semibold text-2xl text-midnight mb-6 flex items-center gap-2">
-            <Target className="w-6 h-6 text-aegean-blue" />
-            Quests
-          </h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {quests.map(quest => (
-              <Card
-                key={quest.id}
-                title={quest.title}
-                description={quest.description}
-                icon="⚔️"
-                status={quest.status === 'completed' ? 'completed' : 'active'}
-              >
-                <div className="space-y-3">
-                  {/* Progress bar */}
-                  <div className="w-full bg-slate-mist rounded-full h-3">
-                    <div
-                      className="bg-gradient-to-r from-aegean-blue to-deep-aegean h-3 rounded-full transition-all duration-500"
-                      style={{ width: `${(quest.progress / quest.total) * 100}%` }}
-                    ></div>
-                  </div>
-                  
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="font-inter text-storm-gray">
-                      {quest.progress}/{quest.total} completed
-                    </span>
-                    <span className="font-inter font-semibold text-aegean-blue">
-                      +{quest.xp_reward} XP
-                    </span>
-                  </div>
+ 
 
-                  {/* Quest completion button */}
-                  {quest.status === 'active' && quest.progress >= quest.total && (
-                    <Button
-                      text={
-                        completingQuest === quest.id 
-                          ? "Completing..." 
-                          : "Complete Quest"
-                      }
-                      onClick={() => handleCompleteQuest(quest.id)}
-                      variant="primary"
-                      disabled={completingQuest === quest.id}
-                      className="w-full"
-                    />
-                  )}
-
-                  {quest.status === 'completed' && (
-                    <div className="text-center">
-                      <span className="font-inter text-laurel-green font-semibold text-sm">
-                        ✓ Quest Completed!
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </Card>
-            ))}
-          </div>
-        </div>
       </div>
     </div>
   );
