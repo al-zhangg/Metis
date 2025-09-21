@@ -16,6 +16,7 @@ const Dashboard: React.FC = () => {
   const [quests, setQuests] = useState<Quest[]>([]);
   const [loading, setLoading] = useState(true);
   const [completingHabit, setCompletingHabit] = useState<number | null>(null);
+  const [completingQuest, setCompletingQuest] = useState<number | null>(null);
 
   // Ensure user is set in enhancedApi
   useEffect(() => {
@@ -67,6 +68,9 @@ const Dashboard: React.FC = () => {
     try {
       const success = dailyTracker.markCompleted(habitId);
       if (success) {
+        // Add XP for completing habit
+        await enhancedApi.addXP(25); // 25 XP per habit completion
+        
         // Update the habits list to reflect completion
         setHabits(prev => prev.map(habit => 
           habit.id === habitId 
@@ -78,6 +82,30 @@ const Dashboard: React.FC = () => {
       console.error('Failed to complete habit:', error);
     } finally {
       setCompletingHabit(null);
+    }
+  };
+
+  const handleCompleteQuest = async (questId: number) => {
+    setCompletingQuest(questId);
+    try {
+      const result = await enhancedApi.completeQuest(questId);
+      if (result.success) {
+        // Update the quests list to reflect completion
+        setQuests(prev => prev.map(quest => 
+          quest.id === questId 
+            ? { ...quest, status: 'completed' as const, progress: quest.total }
+            : quest
+        ));
+        
+        // Refresh the page to update XP display
+        window.location.reload();
+      } else {
+        console.error('Failed to complete quest:', result.error);
+      }
+    } catch (error) {
+      console.error('Failed to complete quest:', error);
+    } finally {
+      setCompletingQuest(null);
     }
   };
 
@@ -353,6 +381,29 @@ const Dashboard: React.FC = () => {
                       +{quest.xp_reward} XP
                     </span>
                   </div>
+
+                  {/* Quest completion button */}
+                  {quest.status === 'active' && quest.progress >= quest.total && (
+                    <Button
+                      text={
+                        completingQuest === quest.id 
+                          ? "Completing..." 
+                          : "Complete Quest"
+                      }
+                      onClick={() => handleCompleteQuest(quest.id)}
+                      variant="primary"
+                      disabled={completingQuest === quest.id}
+                      className="w-full"
+                    />
+                  )}
+
+                  {quest.status === 'completed' && (
+                    <div className="text-center">
+                      <span className="font-inter text-laurel-green font-semibold text-sm">
+                        ✓ Quest Completed!
+                      </span>
+                    </div>
+                  )}
                 </div>
               </Card>
             ))}
