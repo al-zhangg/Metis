@@ -99,10 +99,10 @@ const AddHabit: React.FC = () => {
         backgroundRepeat: 'no-repeat'
       }}
     >
-      {/* Strong white tint overlay for better readability */}
-      <div className="absolute inset-0 bg-white/70 z-0"></div>
       {/* Constellation decorations moved to the page edges so they don't overlap the form */}
       <SideImage src="/images/constellation2.png" side="right" decorative position="absolute" className="bottom-0 right-0 translate-x-8 pointer-events-none -z-10" />
+      {/* Strong white tint overlay for better readability */}
+      <div className="absolute inset-0 bg-white/70 z-0"></div>
       {/* make the inner container relative for any inner absolute positioning */}
       <div className="max-w-2xl mx-auto relative z-10">
         <div className="mb-8">
