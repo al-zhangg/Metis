@@ -10,7 +10,7 @@ export default {
         // Light blue-gray color scheme with Greek mythology inspiration
         'olympus-white': '#f2ede0',
         'marble': '#f8fafc',
-        'slate-mist': '#efe2c2ff',
+        'slate-mist': '#E7E7E7',
         'aegean-blue': '#90D5EC',
         'deep-aegean': '#B7C9E2',
         'bronze': '#AADDEC',
