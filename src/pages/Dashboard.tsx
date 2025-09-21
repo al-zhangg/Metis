@@ -234,7 +234,6 @@ const Dashboard: React.FC = () => {
         {/* Daily Progress */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 border border-aegean-blue/20 shadow-lg text-center">
-            {/* <div className="text-4xl mb-2">🎯</div> */}
             <div className="font-cinzel font-semibold text-xl text-midnight mb-1">
               Today's Progress
             </div>
@@ -244,7 +243,6 @@ const Dashboard: React.FC = () => {
           </div>
           
           <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 border border-aegean-blue/20 shadow-lg text-center">
-            {/* <div className="text-4xl mb-2"></div> */}
             <div className="font-cinzel font-semibold text-xl text-midnight mb-1">
               Longest Streak
             </div>
@@ -254,7 +252,6 @@ const Dashboard: React.FC = () => {
           </div>
           
           <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 border border-aegean-blue/20 shadow-lg text-center">
-            {/* <div className="text-4xl mb-2">⚡</div> */}
             <div className="font-cinzel font-semibold text-xl text-midnight mb-1">
               Divine Energy
             </div>
@@ -278,7 +275,6 @@ const Dashboard: React.FC = () => {
           
           {habits.length === 0 ? (
             <div className="text-center py-12">
-              {/* <div className="text-6xl mb-4">🏛️</div> */}
               <p className="font-inter text-storm-gray mb-4">
                 No habits yet. What must be done?
               </p>
@@ -366,31 +362,31 @@ const Dashboard: React.FC = () => {
                           </div>
                         )}
 
-                        {/* AI Actionable Steps */}
+                        {/* Habit Classification */}
                         <div className="space-y-2">
                           <div className="flex items-center gap-2 text-xs text-gray-600">
                             <Target className="w-3 h-3" />
                             <span className="font-inter font-medium uppercase tracking-wide">
-                              AI Insights
+                              Habit Classification
                             </span>
                           </div>
                           <div className="grid grid-cols-1 gap-2 text-xs">
                             <div className="flex items-center gap-2">
                               <span className="w-1.5 h-1.5 bg-blue-400 rounded-full"></span>
                               <span className="font-inter text-gray-700">
-                                <strong>Category:</strong> {habit.category}
+                                <strong>Category:</strong> {habit.category || 'General'}
                               </span>
                             </div>
                             <div className="flex items-center gap-2">
                               <span className="w-1.5 h-1.5 bg-purple-400 rounded-full"></span>
                               <span className="font-inter text-gray-700">
-                                <strong>Difficulty:</strong> {habit.difficulty}
+                                <strong>Difficulty:</strong> {habit.difficulty || 'Medium'}
                               </span>
                             </div>
                             <div className="flex items-center gap-2">
                               <span className="w-1.5 h-1.5 bg-green-400 rounded-full"></span>
                               <span className="font-inter text-gray-700">
-                                <strong>Frequency:</strong> {habit.suggested_frequency}
+                                <strong>Frequency:</strong> {habit.suggested_frequency || 'Daily'}
                               </span>
                             </div>
                           </div>
@@ -459,10 +455,6 @@ const Dashboard: React.FC = () => {
             </div>
           )}
         </div>
-
-        {/* Divine Quests */}
- 
-
       </div>
     </div>
   );

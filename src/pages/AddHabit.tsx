@@ -14,8 +14,7 @@ const AddHabit: React.FC = () => {
     goal: '',
     category: '',
     description: '',
-    icon: 'book',
-    suggested_frequency: 'daily'
+    icon: 'book'
   });
   const [showModal, setShowModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -30,10 +29,6 @@ const AddHabit: React.FC = () => {
     'book', 'croslegg', 'muscle', 'runn', 'paint', 'plant', 'drop', 'apple', 'write', 'music'
   ];
 
-  const frequencies = [
-    'daily', 'weekly', 'monthly'
-  ];
-
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -45,7 +40,7 @@ const AddHabit: React.FC = () => {
   const navigate = useNavigate();
 
   const handleSubmit = async (e?: React.FormEvent) => {
-    if (e && typeof (e as any).preventDefault === 'function') (e as any).preventDefault();
+  if (e && typeof (e as any).preventDefault === 'function') (e as any).preventDefault();
     if (!formData.title || !formData.goal) {
       console.error('Missing required fields');
       return;
@@ -54,22 +49,36 @@ const AddHabit: React.FC = () => {
     setIsSubmitting(true);
     
     try {
+      // Get AI classification if we have one from preview, or generate it now
+      let classification = aiClassification;
+      if (!classification) {
+        const { aiService } = await import('../services/aiService');
+        classification = await aiService.classifyHabit(
+          formData.title, 
+          formData.description || `${formData.goal} - ${formData.category}`
+        );
+      }
+
       const result = await enhancedApi.createHabit({
         title: formData.title,
         description: formData.description || `${formData.goal} - ${formData.category}`,
         icon: formData.icon,
-        suggested_frequency: formData.suggested_frequency
+        // Include AI classification data
+        category: classification.category,
+        difficulty: classification.difficulty,
+        wisdom: classification.wisdom,
+        mythic_title: classification.mythicTitle,
+        suggested_frequency: classification.suggestedFrequency
       });
       
-      if (result.success) {
+  if (result.success) {
         setShowModal(true);
         setFormData({
           title: '',
           goal: '',
           category: '',
           description: '',
-          icon: 'book',
-          suggested_frequency: 'daily'
+          icon: 'book'
         });
         setShowPreview(false);
         setAiClassification(null);
@@ -184,7 +193,7 @@ const AddHabit: React.FC = () => {
           {/* Goal */}
           <div className="mb-6">
             <label htmlFor="goal" className="block font-cinzel font-semibold text-midnight-blue mb-2">
-              Goal *
+              Daily Goal *
             </label>
             <input
               type="text"
@@ -216,27 +225,6 @@ const AddHabit: React.FC = () => {
               {categories.map(category => (
                 <option key={category} value={category}>
                   {category}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Frequency */}
-          <div className="mb-6">
-            <label htmlFor="suggested_frequency" className="block font-cinzel font-semibold text-midnight-blue mb-2">
-              Frequency
-            </label>
-            <select
-              id="suggested_frequency"
-              name="suggested_frequency"
-              value={formData.suggested_frequency}
-              onChange={handleInputChange}
-              className="w-full px-4 py-3 border-2 border-bronze/20 rounded-lg focus:border-bronze focus:ring-2 focus:ring-bronze/20 font-inter"
-              style={{ backgroundColor: '#F6F2E9' }}
-            >
-              {frequencies.map(freq => (
-                <option key={freq} value={freq}>
-                  {freq.charAt(0).toUpperCase() + freq.slice(1)}
                 </option>
               ))}
             </select>

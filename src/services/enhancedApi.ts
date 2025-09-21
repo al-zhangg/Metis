@@ -184,19 +184,37 @@ class EnhancedApiService {
 
   // Habit Management with AI Classification
   async createHabit(habitData: {
-    title: string;
-    description: string;
-    icon: string;
-    suggested_frequency?: string; // allow override like 'daily' or 'weekly'
-  }): Promise<{ success: boolean; habit?: Habit; error?: string }> {
+  title: string;
+  description: string;
+  icon: string;
+  suggested_frequency?: string;
+  category?: string;
+  difficulty?: string;
+  wisdom?: string;
+  mythic_title?: string;
+}): Promise<{ success: boolean; habit?: Habit; error?: string }> {
     try {
       console.log('Creating habit for user:', this.getCurrentUserId());
       
       // Get AI classification
-      const classification = await aiService.classifyHabit(
-        habitData.title,
-        habitData.description
-      );
+      // Use provided AI classification or generate new one
+let classification;
+if (habitData.category && habitData.difficulty && habitData.wisdom) {
+  // Use provided classification
+  classification = {
+    category: habitData.category,
+    difficulty: habitData.difficulty,
+    suggestedFrequency: habitData.suggested_frequency || 'daily',
+    mythicTitle: habitData.mythic_title || 'Path of the Determined Hero',
+    wisdom: habitData.wisdom
+  };
+} else {
+  // Generate new classification
+  classification = await aiService.classifyHabit(
+    habitData.title,
+    habitData.description
+  );
+}
 
       const newHabit: Partial<Habit> = {
         user_id: this.getCurrentUserId() || 'anonymous',
