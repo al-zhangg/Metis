@@ -142,6 +142,7 @@ class EnhancedApiService {
     title: string;
     description: string;
     icon: string;
+    suggested_frequency?: string; // allow override like 'daily' or 'weekly'
   }): Promise<{ success: boolean; habit?: Habit; error?: string }> {
     try {
       console.log('Creating habit for user:', this.getCurrentUserId());
@@ -159,7 +160,7 @@ class EnhancedApiService {
         icon: habitData.icon,
         category: classification.category,
         difficulty: classification.difficulty,
-        suggested_frequency: classification.suggestedFrequency,
+        suggested_frequency: habitData.suggested_frequency || classification.suggestedFrequency,
         mythic_title: classification.mythicTitle,
         wisdom: classification.wisdom,
         current_streak: 0,
