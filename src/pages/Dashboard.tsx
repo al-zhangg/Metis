@@ -8,7 +8,7 @@ import HabitProgressAnalysis from '../components/HabitProgressAnalysis';
 import { enhancedApi } from '../services/enhancedApi';
 import { dailyTracker } from '../services/dailyTracker';
 import { useAuth } from '../contexts/AuthContext';
-import type { Habit, Quest } from '../services/supabaseClient';
+import type { Habit, Quest, UserProfile } from '../services/supabaseClient';
 
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
@@ -17,6 +17,7 @@ const Dashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [completingHabit, setCompletingHabit] = useState<number | null>(null);
   const [completingQuest, setCompletingQuest] = useState<number | null>(null);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
 
   // Ensure user is set in enhancedApi
   useEffect(() => {
@@ -29,13 +30,15 @@ const Dashboard: React.FC = () => {
     const fetchData = async () => {
       try {
         console.log('Dashboard: Fetching data...');
-        const [habitsData, questsData] = await Promise.all([
+        const [habitsData, questsData, profileData] = await Promise.all([
           enhancedApi.getHabits(),
-          enhancedApi.getQuests()
+          enhancedApi.getQuests(),
+          enhancedApi.getUserProfile(),
         ]);
         console.log('Dashboard: Received habits:', habitsData);
         setHabits(habitsData);
         setQuests(questsData);
+        setProfile(profileData);
       } catch (error) {
         console.error('Failed to fetch dashboard data:', error);
       } finally {
@@ -77,6 +80,10 @@ const Dashboard: React.FC = () => {
             ? { ...habit, current_streak: dailyTracker.getStreak(habitId) }
             : habit
         ));
+        
+        // Refresh profile to update XP/level without reloading
+        const updatedProfile = await enhancedApi.getUserProfile();
+        setProfile(updatedProfile);
       }
     } catch (error) {
       console.error('Failed to complete habit:', error);
@@ -97,8 +104,9 @@ const Dashboard: React.FC = () => {
             : quest
         ));
         
-        // Refresh the page to update XP display
-        window.location.reload();
+        // Refresh profile to update XP/level without reloading
+        const updatedProfile = await enhancedApi.getUserProfile();
+        setProfile(updatedProfile);
       } else {
         console.error('Failed to complete quest:', result.error);
       }
@@ -151,7 +159,7 @@ const Dashboard: React.FC = () => {
       <div className="max-w-6xl mx-auto p-6 -mt-16 relative z-10">
         {/* XP Progress */}
         <div className="mb-8">
-          <XPBar currentXP={1250} maxXP={2000} level={8} />
+          <XPBar currentXP={profile?.current_xp ?? 0} maxXP={2000} level={profile?.level ?? 1} />
         </div>
 
         {/* Daily Progress */}
