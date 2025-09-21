@@ -12,6 +12,8 @@ type Props = {
   blend?: 'normal' | 'multiply' | 'screen' | 'overlay' | 'darken' | 'lighten';
   // Optional CSS color (hex, rgba, etc.) to tint the image. If provided, an overlay will be applied.
   tint?: string;
+  // Positioning mode: 'fixed' (default, viewport-fixed), 'absolute' (scrolls with page), or 'sticky'
+  position?: 'fixed' | 'absolute' | 'sticky';
 };
 
 export default function SideImage({
@@ -24,9 +26,17 @@ export default function SideImage({
   decorative = false,
   blend = 'multiply',
   tint,
+  position = 'fixed',
 }: Props) {
-  const base = `fixed top-24 z-10 hidden lg:block ${className}`;
   const sideClass = side === 'left' ? 'left-6' : 'right-6';
+
+  const positionClass = position === 'fixed'
+    ? 'fixed top-24'
+    : position === 'sticky'
+      ? 'sticky top-24'
+      : 'absolute';
+
+  const base = `${positionClass} z-10 hidden lg:block ${className}`;
 
   const blendClassMap: Record<string, string> = {
     normal: 'mix-blend-normal',

@@ -85,8 +85,8 @@ const Journal: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-marble to-amber-50 p-6">
       {/* Decorative side images (large screens) */}
-  <SideImage src="/images/image.png" side="left" decorative />
-  <SideImage src="/images/column1.png" side="right" decorative className="bottom-0 right-6 top-auto" />
+  <SideImage src="/images/image.png" side="left" decorative position="absolute" />
+  <SideImage src="/images/column1.png" side="right" decorative position="absolute" className="bottom-0 right-4 top-auto" />
 
       <div className="max-w-4xl mx-auto">
         <div className="mb-8">
