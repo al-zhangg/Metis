@@ -72,7 +72,9 @@ const Dashboard: React.FC = () => {
   const totalHabits = habits.length;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-marble via-slate-mist to-olympus-white">
+    <div className="min-h-screen bg-gradient-to-br from-marble via-slate-mist to-olympus-white relative">
+      {/* White tint overlay for consistency */}
+      <div className="absolute inset-0 bg-white/70 z-0"></div>
       {/* Hero Section */}
       <div className="relative overflow-hidden">
         <div 
