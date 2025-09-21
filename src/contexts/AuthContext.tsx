@@ -180,12 +180,23 @@ const AuthProviderContent: React.FC<{
           // Set current user in enhanced API
           enhancedApi.setCurrentUser(auth0User);
           
-          // Try to get existing user profile
-          let userProfile = await getUserProfile(auth0User.sub!);
-          
-          // If user doesn't exist, create new profile with defaults
+          // Try to get existing user profile via enhancedApi
+          let userProfile = await enhancedApi.getUserProfile();
+
+          // If user doesn't exist, create new profile with defaults via enhancedApi
           if (!userProfile) {
-            userProfile = await createUserProfile(auth0User);
+            const newProfile = {
+              id: auth0User.sub,
+              username: auth0User.name || auth0User.email?.split('@')[0] || 'User',
+              email: auth0User.email || '',
+              current_xp: 0,
+              level: 1,
+              total_habits: 0,
+              achievements: [],
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            };
+            userProfile = await enhancedApi.upsertUserProfile(newProfile as any);
           }
           
           // Update last login time

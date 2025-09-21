@@ -63,7 +63,9 @@ class EnhancedApiService {
   // Load profile from localStorage
   private loadProfileFromStorage(): UserProfile | null {
     try {
-      const stored = localStorage.getItem('metis_profile');
+  const userId = this.getCurrentUserId();
+  if (!userId) return null;
+  const stored = localStorage.getItem(`metis_profile_${userId}`);
       if (stored) {
         const profile = JSON.parse(stored);
         console.log('Loaded profile from storage:', profile);
@@ -78,7 +80,9 @@ class EnhancedApiService {
   // Save profile to localStorage
   private saveProfileToStorage(profile: UserProfile): void {
     try {
-      localStorage.setItem('metis_profile', JSON.stringify(profile));
+  const userId = profile?.id || this.getCurrentUserId();
+  if (!userId) return;
+  localStorage.setItem(`metis_profile_${userId}`, JSON.stringify(profile));
       console.log('Saved profile to storage:', profile);
     } catch (error) {
       console.error('Error saving profile to storage:', error);
@@ -605,40 +609,25 @@ class EnhancedApiService {
         }
       }
       
-      // Try to load from localStorage first
+      // Try to load from localStorage first (per-user key)
       let profile = this.loadProfileFromStorage();
-      
-      // If no profile in storage, create a new one
+
+      // If no profile in storage, create a new one with sensible defaults
       if (!profile) {
         console.log('No profile found, creating new one');
         profile = {
           id: userId,
-          username: this.getCurrentUserName() || "PhilosopherWarrior",
-          email: this.getCurrentUserEmail() || "user@example.com",
-          current_xp: 1250,
-          level: 8,
+          username: this.getCurrentUserName() || "NewUser",
+          email: this.getCurrentUserEmail() || "",
+          current_xp: 0,
+          level: 1,
           total_habits: 0, // Will be updated based on actual habits
-          achievements: [
-            {
-              id: 1,
-              title: "Wisdom Seeker",
-              description: "Complete 10 meditation sessions",
-              icon: "🦉",
-              unlocked_at: "2024-01-10"
-            },
-            {
-              id: 2,
-              title: "Oracle's Insight",
-              description: "Write 20 journal entries",
-              icon: "📜",
-              unlocked_at: "2024-01-12"
-            }
-          ],
+          achievements: [],
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         };
-        
-        // Save new profile to localStorage
+
+        // Save new profile to localStorage (and Supabase fallback below)
         this.saveProfileToStorage(profile);
       }
       
@@ -651,6 +640,39 @@ class EnhancedApiService {
     } catch (error) {
       console.error('Error fetching user profile:', error);
       return null;
+    }
+  }
+
+  // Upsert (create or update) user profile to Supabase or localStorage
+  async upsertUserProfile(profile: UserProfile): Promise<UserProfile> {
+    try {
+      const userId = profile.id || this.getCurrentUserId();
+      if (!userId) throw new Error('No user id for profile');
+
+      if (isSupabaseConfigured() && supabase) {
+        try {
+          const { data, error } = await supabase
+            .from('user_profiles')
+            .upsert(profile, { onConflict: 'id' })
+            .select()
+            .single();
+
+          if (error) throw error;
+          this.saveProfileToStorage(data);
+          return data;
+        } catch (err) {
+          console.warn('Supabase upsert failed, falling back to localStorage:', err);
+          this.saveProfileToStorage(profile);
+          return profile;
+        }
+      }
+
+      // Local fallback
+      this.saveProfileToStorage(profile);
+      return profile;
+    } catch (error) {
+      console.error('Error upserting profile:', error);
+      throw error;
     }
   }
 
