@@ -7,7 +7,56 @@ import type { Habit, JournalEntry, Quest, UserProfile } from './supabaseClient';
 // Enhanced API service with AI integration
 class EnhancedApiService {
   private currentUser: any = null
-  private habits: Habit[] = [] // Store habits locally;
+  private habits: Habit[] = [] // Store habits locally
+
+  // Load habits from localStorage
+  private loadHabitsFromStorage(): void {
+    try {
+      const stored = localStorage.getItem('metis_habits');
+      if (stored) {
+        this.habits = JSON.parse(stored);
+        console.log('Loaded habits from storage:', this.habits);
+      }
+    } catch (error) {
+      console.error('Error loading habits from storage:', error);
+      this.habits = [];
+    }
+  }
+
+  // Save habits to localStorage
+  private saveHabitsToStorage(): void {
+    try {
+      localStorage.setItem('metis_habits', JSON.stringify(this.habits));
+      console.log('Saved habits to storage:', this.habits);
+    } catch (error) {
+      console.error('Error saving habits to storage:', error);
+    }
+  }
+
+  // Load profile from localStorage
+  private loadProfileFromStorage(): UserProfile | null {
+    try {
+      const stored = localStorage.getItem('metis_profile');
+      if (stored) {
+        const profile = JSON.parse(stored);
+        console.log('Loaded profile from storage:', profile);
+        return profile;
+      }
+    } catch (error) {
+      console.error('Error loading profile from storage:', error);
+    }
+    return null;
+  }
+
+  // Save profile to localStorage
+  private saveProfileToStorage(profile: UserProfile): void {
+    try {
+      localStorage.setItem('metis_profile', JSON.stringify(profile));
+      console.log('Saved profile to storage:', profile);
+    } catch (error) {
+      console.error('Error saving profile to storage:', error);
+    }
+  }
 
   private getCurrentUserId(): string | null {
     return this.currentUser?.sub || null;
@@ -83,6 +132,9 @@ class EnhancedApiService {
 
       // Add to local habits array
       this.habits.unshift(mockHabit); // Add to beginning of array
+      
+      // Save to localStorage
+      this.saveHabitsToStorage();
 
       console.log('Using mock habit:', mockHabit);
       console.log('Updated habits array:', this.habits);
@@ -111,7 +163,10 @@ class EnhancedApiService {
         return data || [];
       }
       
-      // Return locally stored habits, or default examples if none exist
+      // Load from localStorage first
+      this.loadHabitsFromStorage();
+      
+      // If no habits in storage, initialize with defaults
       if (this.habits.length === 0) {
         console.log('No habits found, initializing with defaults');
         // Initialize with default examples for first-time users
@@ -151,6 +206,9 @@ class EnhancedApiService {
             updated_at: new Date().toISOString(),
           }
         ];
+        
+        // Save defaults to localStorage
+        this.saveHabitsToStorage();
       }
       
       console.log('Returning habits:', this.habits);
@@ -333,33 +391,57 @@ class EnhancedApiService {
         return data || [];
       }
       
-      // In a real app, these would be dynamically generated based on user behavior
-      return [
-        {
-          id: 1,
-          user_id: userId,
-          title: "Complete 5 habits today",
-          description: "Channel your inner Hercules",
-          type: "daily",
-          xp_reward: 50,
-          progress: 2,
-          total: 5,
-          status: "active",
-          created_at: new Date().toISOString(),
-        },
-        {
-          id: 2,
-          user_id: userId,
-          title: "Maintain 7-day streak",
-          description: "Persistence like Odysseus",
-          type: "weekly",
-          xp_reward: 100,
-          progress: 7,
-          total: 7,
-          status: "completed",
-          created_at: new Date().toISOString(),
-        }
-      ];
+      // Load from localStorage first
+      let quests = this.loadQuestsFromStorage();
+      
+      // If no quests in storage, initialize with defaults
+      if (quests.length === 0) {
+        console.log('No quests found, initializing with defaults');
+        quests = [
+          {
+            id: 1,
+            user_id: userId,
+            title: "Complete 5 habits today",
+            description: "Channel your inner Hercules",
+            type: "daily",
+            xp_reward: 50,
+            progress: 0,
+            total: 5,
+            status: "active",
+            created_at: new Date().toISOString(),
+          },
+          {
+            id: 2,
+            user_id: userId,
+            title: "Maintain 7-day streak",
+            description: "Persistence like Odysseus",
+            type: "weekly",
+            xp_reward: 100,
+            progress: 0,
+            total: 7,
+            status: "active",
+            created_at: new Date().toISOString(),
+          },
+          {
+            id: 3,
+            user_id: userId,
+            title: "Write 3 journal entries",
+            description: "Reflect like the ancient philosophers",
+            type: "weekly",
+            xp_reward: 75,
+            progress: 0,
+            total: 3,
+            status: "active",
+            created_at: new Date().toISOString(),
+          }
+        ];
+        
+        // Save defaults to localStorage
+        this.saveQuestsToStorage(quests);
+      }
+      
+      console.log('Returning quests:', quests);
+      return quests;
     } catch (error) {
       console.error('Error fetching quests:', error);
       return [];
@@ -409,47 +491,144 @@ class EnhancedApiService {
           
         if (error && error.code !== 'PGRST116') {
           console.error('Supabase profile error:', error);
-          // Fall through to mock data
+          // Fall through to localStorage
         } else if (data) {
           console.log('Profile loaded from Supabase:', data);
           return data;
         }
       }
       
-      // Mock profile data
-      const mockProfile = {
-        id: userId,
-        username: this.getCurrentUserName() || "PhilosopherWarrior",
-        email: this.getCurrentUserEmail() || "user@example.com",
-        current_xp: 1250,
-        level: 8,
-        total_habits: 15,
-        achievements: [
-          {
-            id: 1,
-            title: "Wisdom Seeker",
-            description: "Complete 10 meditation sessions",
-            icon: "🦉",
-            unlocked_at: "2024-01-10"
-          },
-          {
-            id: 2,
-            title: "Oracle's Insight",
-            description: "Write 20 journal entries",
-            icon: "📜",
-            unlocked_at: "2024-01-12"
-          }
-        ],
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
+      // Try to load from localStorage first
+      let profile = this.loadProfileFromStorage();
       
-      console.log('Using mock profile:', mockProfile);
-      return mockProfile;
+      // If no profile in storage, create a new one
+      if (!profile) {
+        console.log('No profile found, creating new one');
+        profile = {
+          id: userId,
+          username: this.getCurrentUserName() || "PhilosopherWarrior",
+          email: this.getCurrentUserEmail() || "user@example.com",
+          current_xp: 1250,
+          level: 8,
+          total_habits: 0, // Will be updated based on actual habits
+          achievements: [
+            {
+              id: 1,
+              title: "Wisdom Seeker",
+              description: "Complete 10 meditation sessions",
+              icon: "🦉",
+              unlocked_at: "2024-01-10"
+            },
+            {
+              id: 2,
+              title: "Oracle's Insight",
+              description: "Write 20 journal entries",
+              icon: "📜",
+              unlocked_at: "2024-01-12"
+            }
+          ],
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+        
+        // Save new profile to localStorage
+        this.saveProfileToStorage(profile);
+      }
+      
+      // Update total_habits based on current habits
+      const habits = await this.getHabits();
+      profile.total_habits = habits.length;
+      
+      console.log('Using profile:', profile);
+      return profile;
     } catch (error) {
       console.error('Error fetching user profile:', error);
       return null;
     }
+  }
+
+  // Add XP when habit is completed
+  async addXP(amount: number): Promise<void> {
+    try {
+      const profile = await this.getUserProfile();
+      if (!profile) return;
+
+      profile.current_xp += amount;
+      
+      // Check for level up (every 2000 XP)
+      const newLevel = Math.floor(profile.current_xp / 2000) + 1;
+      if (newLevel > profile.level) {
+        profile.level = newLevel;
+        console.log(`Level up! New level: ${profile.level}`);
+      }
+
+      profile.updated_at = new Date().toISOString();
+      
+      // Save updated profile
+      this.saveProfileToStorage(profile);
+      
+      console.log(`Added ${amount} XP. Total: ${profile.current_xp}, Level: ${profile.level}`);
+    } catch (error) {
+      console.error('Error adding XP:', error);
+    }
+  }
+
+  // Complete a quest and add XP
+  async completeQuest(questId: number): Promise<{ success: boolean; xpGained?: number; error?: string }> {
+    try {
+      const quests = await this.getQuests();
+      const quest = quests.find(q => q.id === questId);
+      
+      if (!quest) {
+        return { success: false, error: 'Quest not found' };
+      }
+      
+      if (quest.status === 'completed') {
+        return { success: false, error: 'Quest already completed' };
+      }
+      
+      // Mark quest as completed
+      quest.status = 'completed';
+      quest.progress = quest.total;
+      
+      // Save quests to localStorage
+      this.saveQuestsToStorage(quests);
+      
+      // Add XP reward
+      await this.addXP(quest.xp_reward);
+      
+      console.log(`Quest completed: ${quest.title}, XP gained: ${quest.xp_reward}`);
+      
+      return { success: true, xpGained: quest.xp_reward };
+    } catch (error) {
+      console.error('Error completing quest:', error);
+      return { success: false, error: 'Failed to complete quest' };
+    }
+  }
+
+  // Save quests to localStorage
+  private saveQuestsToStorage(quests: Quest[]): void {
+    try {
+      localStorage.setItem('metis_quests', JSON.stringify(quests));
+      console.log('Saved quests to storage:', quests);
+    } catch (error) {
+      console.error('Error saving quests to storage:', error);
+    }
+  }
+
+  // Load quests from localStorage
+  private loadQuestsFromStorage(): Quest[] {
+    try {
+      const stored = localStorage.getItem('metis_quests');
+      if (stored) {
+        const quests = JSON.parse(stored);
+        console.log('Loaded quests from storage:', quests);
+        return quests;
+      }
+    } catch (error) {
+      console.error('Error loading quests from storage:', error);
+    }
+    return [];
   }
 }
 
