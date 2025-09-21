@@ -3,7 +3,7 @@ import React from 'react';
 interface ButtonProps {
   text: string;
   onClick: (e?: React.MouseEvent<HTMLButtonElement>) => void;
-  variant?: 'primary' | 'secondary';
+  variant?: 'primary' | 'secondary' | 'danger';
   disabled?: boolean;
   className?: string;
 }
@@ -33,6 +33,12 @@ const Button: React.FC<ButtonProps> = ({
       bg-slate-mist text-storm-gray border-2 border-storm-gray/20
       hover:bg-storm-gray hover:text-white hover:border-storm-gray
       focus:ring-storm-gray
+    `,
+    danger: `
+      bg-red-600 text-white border-2 border-red-600
+      hover:bg-red-700 hover:border-red-700
+      focus:ring-red-600
+      disabled:bg-red-400 disabled:border-red-400
     `
   };
 
