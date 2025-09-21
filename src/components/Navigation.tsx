@@ -24,10 +24,13 @@ const Navigation: React.FC = () => {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-aegean-blue to-deep-aegean rounded-full flex items-center justify-center shadow-lg">
-              <span className="text-white font-cinzel font-bold text-lg">M</span>
-            </div>
-            <span className="font-cinzel font-bold text-xl text-midnight">
+            {/* Placeholder SVG logo file. Drop a real SVG at public/images/logo.svg or update the path. */}
+            <img
+              src="/images/metis_logo.svg"
+              alt="Metis logo"
+              className="w-10 h-10 rounded-none object-contain bg-transparent"
+            />
+            <span className="font-cinzel font-bold text-xl text-black">
               Metis
             </span>
           </Link>
