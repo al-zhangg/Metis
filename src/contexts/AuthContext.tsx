@@ -29,27 +29,36 @@ const Auth0Wrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => 
   const domain = import.meta.env.VITE_AUTH0_DOMAIN || '';
   const clientId = import.meta.env.VITE_AUTH0_CLIENT_ID || '';
   
-  // Get the current origin, which works for localhost, Codespaces, and other environments
-  const redirectUri = window.location.origin;
+  // Get the current origin and ensure it's properly formatted
+  const currentOrigin = window.location.origin;
+  const redirectUri = currentOrigin;
   
-  console.log('🔐 Auth0 Environment Variables:', {
+  // Check if we're in WebContainer environment
+  const isWebContainer = window.location.hostname.includes('webcontainer-api.io');
+  const isCodespaces = window.location.hostname.includes('github.dev') || window.location.hostname.includes('codespaces');
+  const isLocalhost = window.location.hostname === 'localhost';
+  
+  console.log('🔐 Auth0 Environment Check:', {
     domain: domain || '❌ MISSING',
     clientId: clientId ? '✅ SET' : '❌ MISSING',
-    domainValid: domain.includes('auth0.com'),
-    clientIdLength: clientId.length,
     redirectUri: redirectUri,
-    isCodespaces: window.location.hostname.includes('github.dev') || window.location.hostname.includes('codespaces'),
-    isLocalhost: window.location.hostname === 'localhost'
+    currentOrigin: currentOrigin,
+    environment: isWebContainer ? 'WebContainer' : isCodespaces ? 'Codespaces' : isLocalhost ? 'Localhost' : 'Unknown',
+    hostname: window.location.hostname
   });
 
   const isAuth0Configured = domain && clientId && domain.includes('auth0.com');
 
   if (!isAuth0Configured) {
-    console.error('❌ Auth0 Configuration Invalid:', {
-      domain: domain || 'MISSING',
-      clientId: clientId ? 'Present but invalid' : 'MISSING',
-      help: 'Check your .env file'
-    });
+    const errorMsg = `Auth0 not configured. Add these URLs to your Auth0 app settings:
+    
+Callback URLs: ${currentOrigin}
+Web Origins: ${currentOrigin}  
+Logout URLs: ${currentOrigin}
+
+Current environment: ${isWebContainer ? 'WebContainer' : isCodespaces ? 'Codespaces' : 'Localhost'}`;
+    
+    console.error('❌ Auth0 Configuration Invalid:', errorMsg);
     return <AuthProviderContent isConfigured={false}>{children}</AuthProviderContent>;
   }
 
@@ -62,15 +71,27 @@ const Auth0Wrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => 
       authorizationParams={{
         redirect_uri: redirectUri,
         scope: "openid profile email",
-        audience: undefined,
-        prompt: "select_account"
+        audience: undefined
       }}
       cacheLocation="localstorage"
       useRefreshTokens={true}
-      skipRedirectCallback={window.location.search.includes('code=')}
+      skipRedirectCallback={window.location.pathname === '/auth'}
       onRedirectCallback={(appState) => {
-        console.log('🔄 Auth0 Redirect Callback:', appState);
-        window.history.replaceState({}, document.title, window.location.pathname);
+        try {
+          console.log('🔄 Auth0 Redirect Callback:', appState);
+          const returnTo = (appState as any)?.returnTo || window.location.pathname || '/dashboard';
+          
+          // Clean up the URL by removing Auth0 parameters
+          const url = new URL(window.location.href);
+          url.searchParams.delete('code');
+          url.searchParams.delete('state');
+          
+          // Navigate to the return URL
+          window.history.replaceState({}, document.title, returnTo);
+        } catch (err) {
+          console.error('Error during onRedirectCallback navigation:', err);
+          window.history.replaceState({}, document.title, '/dashboard');
+        }
       }}
       onError={(error) => {
         console.error('🚨 Auth0 Error:', error);
@@ -276,7 +297,14 @@ const AuthProviderContent: React.FC<{
 
     try {
       setError(null);
-      await loginWithRedirect();
+      console.log('🚀 Initiating Auth0 login...');
+      await loginWithRedirect({ 
+        appState: { returnTo: '/dashboard' },
+        authorizationParams: {
+          redirect_uri: window.location.origin,
+          scope: 'openid profile email'
+        }
+      });
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Login failed';
       console.error('Login error:', errorMessage);

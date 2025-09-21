@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import SideImage from '../components/SideImage';
 import { Plus } from 'lucide-react';
 import Button from '../components/Button';
 import Modal from '../components/Modal';
@@ -37,10 +38,20 @@ const AddHabit: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!formData.title || !formData.goal) {
+      console.error('Missing required fields');
+      return;
+    }
+    
     setIsSubmitting(true);
     
     try {
-      const result = await enhancedApi.createHabit(formData);
+      const result = await enhancedApi.createHabit({
+        title: formData.title,
+        description: formData.description || `${formData.goal} - ${formData.category}`,
+        icon: formData.icon
+      });
+      
       if (result.success) {
         setShowModal(true);
         setFormData({
@@ -50,6 +61,10 @@ const AddHabit: React.FC = () => {
           description: '',
           icon: '📚'
         });
+        setShowPreview(false);
+        setAiClassification(null);
+      } else {
+        console.error('Failed to create habit:', result.error);
       }
     } catch (error) {
       console.error('Failed to add habit:', error);
@@ -75,23 +90,35 @@ const AddHabit: React.FC = () => {
     }
   };
   return (
-    <div className="min-h-screen bg-gradient-to-br from-marble to-amber-50 p-6">
-      <div className="max-w-2xl mx-auto">
+    <div 
+      className="min-h-screen p-6 relative"
+      style={{
+        backgroundImage: 'url(/images/starrysky.png)',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat'
+      }}
+    >
+      {/* Constellation decorations moved to the page edges so they don't overlap the form */}
+      <SideImage src="/images/constellation2.png" side="right" decorative position="absolute" className="bottom-0 right-0 translate-x-8 pointer-events-none -z-10" />
+      {/* Strong white tint overlay for better readability */}
+      <div className="absolute inset-0 bg-white/70 z-0"></div>
+      {/* make the inner container relative for any inner absolute positioning */}
+      <div className="max-w-2xl mx-auto relative z-10">
         <div className="mb-8">
           <h1 className="font-cinzel font-bold text-3xl text-midnight-blue flex items-center gap-3">
             <Plus className="w-8 h-8 text-bronze" />
             Forge a New Habit
           </h1>
           <p className="font-inter text-gray-600 mt-2">
-            Create a new path to wisdom and self-improvement
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-lg p-8 border-2 border-bronze/20">
+        <form onSubmit={handleSubmit} className="rounded-xl shadow-lg p-8 border-2 border-bronze/20" style={{ backgroundColor: '#F6F2E9' }}>
           {/* Habit Icon Selection */}
           <div className="mb-6">
             <label className="block font-cinzel font-semibold text-midnight-blue mb-3">
-              Choose Your Symbol
+              Choose Your Theme
             </label>
             <div className="grid grid-cols-5 gap-3">
               {habitIcons.map(icon => (
@@ -127,6 +154,7 @@ const AddHabit: React.FC = () => {
               onChange={handleInputChange}
               required
               className="w-full px-4 py-3 border-2 border-bronze/20 rounded-lg focus:border-bronze focus:ring-2 focus:ring-bronze/20 font-inter"
+              style={{ backgroundColor: '#F6F2E9' }}
               placeholder="e.g., Morning Meditation"
             />
           </div>
@@ -144,6 +172,7 @@ const AddHabit: React.FC = () => {
               onChange={handleInputChange}
               required
               className="w-full px-4 py-3 border-2 border-bronze/20 rounded-lg focus:border-bronze focus:ring-2 focus:ring-bronze/20 font-inter"
+              style={{ backgroundColor: '#F6F2E9' }}
               placeholder="e.g., 10 minutes daily"
             />
           </div>
@@ -159,6 +188,7 @@ const AddHabit: React.FC = () => {
               value={formData.category}
               onChange={handleInputChange}
               className="w-full px-4 py-3 border-2 border-bronze/20 rounded-lg focus:border-bronze focus:ring-2 focus:ring-bronze/20 font-inter"
+              style={{ backgroundColor: '#F6F2E9' }}
             >
               <option value="">Select a category</option>
               {categories.map(category => (
@@ -181,6 +211,7 @@ const AddHabit: React.FC = () => {
               onChange={handleInputChange}
               rows={3}
               className="w-full px-4 py-3 border-2 border-bronze/20 rounded-lg focus:border-bronze focus:ring-2 focus:ring-bronze/20 font-inter resize-none"
+              style={{ backgroundColor: '#F6F2E9' }}
               placeholder="Describe your habit and its benefits..."
             />
           </div>
@@ -220,7 +251,7 @@ const AddHabit: React.FC = () => {
           <div className="flex gap-4">
             <Button
               text={isSubmitting ? "Creating..." : "Create Habit"}
-              onClick={() => {}}
+              onClick={handleSubmit}
               variant="primary"
               disabled={isSubmitting || !formData.title || !formData.goal}
               className="flex-1"
