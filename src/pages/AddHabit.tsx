@@ -114,7 +114,7 @@ const AddHabit: React.FC = () => {
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-lg p-8 border-2 border-bronze/20">
+        <form onSubmit={handleSubmit} className="rounded-xl shadow-lg p-8 border-2 border-bronze/20" style={{ backgroundColor: '#F6F2E9' }}>
           {/* Habit Icon Selection */}
           <div className="mb-6">
             <label className="block font-cinzel font-semibold text-midnight-blue mb-3">
@@ -154,6 +154,7 @@ const AddHabit: React.FC = () => {
               onChange={handleInputChange}
               required
               className="w-full px-4 py-3 border-2 border-bronze/20 rounded-lg focus:border-bronze focus:ring-2 focus:ring-bronze/20 font-inter"
+              style={{ backgroundColor: '#F6F2E9' }}
               placeholder="e.g., Morning Meditation"
             />
           </div>
@@ -171,6 +172,7 @@ const AddHabit: React.FC = () => {
               onChange={handleInputChange}
               required
               className="w-full px-4 py-3 border-2 border-bronze/20 rounded-lg focus:border-bronze focus:ring-2 focus:ring-bronze/20 font-inter"
+              style={{ backgroundColor: '#F6F2E9' }}
               placeholder="e.g., 10 minutes daily"
             />
           </div>
@@ -186,6 +188,7 @@ const AddHabit: React.FC = () => {
               value={formData.category}
               onChange={handleInputChange}
               className="w-full px-4 py-3 border-2 border-bronze/20 rounded-lg focus:border-bronze focus:ring-2 focus:ring-bronze/20 font-inter"
+              style={{ backgroundColor: '#F6F2E9' }}
             >
               <option value="">Select a category</option>
               {categories.map(category => (
@@ -208,6 +211,7 @@ const AddHabit: React.FC = () => {
               onChange={handleInputChange}
               rows={3}
               className="w-full px-4 py-3 border-2 border-bronze/20 rounded-lg focus:border-bronze focus:ring-2 focus:ring-bronze/20 font-inter resize-none"
+              style={{ backgroundColor: '#F6F2E9' }}
               placeholder="Describe your habit and its benefits..."
             />
           </div>
