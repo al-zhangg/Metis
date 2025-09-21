@@ -8,6 +8,7 @@ import HabitProgressAnalysis from '../components/HabitProgressAnalysis';
 import { enhancedApi } from '../services/enhancedApi';
 import { dailyTracker } from '../services/dailyTracker';
 import { weeklyTracker } from '../services/weeklyTracker';
+import { monthlyTracker } from '../services/monthlyTracker';
 import { useAuth } from '../contexts/AuthContext';
 import type { Habit, Quest, UserProfile } from '../services/supabaseClient';
 
@@ -84,26 +85,43 @@ const Dashboard: React.FC = () => {
 
   const handleCompleteHabit = async (habit: Habit) => {
     const habitId = habit.id;
-    const isWeekly = (habit.suggested_frequency || '').toLowerCase() === 'weekly';
+    const frequency = (habit.suggested_frequency || '').toLowerCase();
+    const isWeekly = frequency === 'weekly';
+    const isMonthly = frequency === 'monthly';
+
     if (isWeekly) {
       if (weeklyTracker.isCompletedThisWeek(habitId)) return;
+    } else if (isMonthly) {
+      if (monthlyTracker.isCompletedThisMonth(habitId)) return;
     } else {
       if (dailyTracker.isCompletedToday(habitId)) return;
     }
 
     setCompletingHabit(habitId);
     try {
-      const marked = isWeekly ? weeklyTracker.markCompleted(habitId) : dailyTracker.markCompleted(habitId);
+      const marked = isWeekly
+        ? weeklyTracker.markCompleted(habitId)
+        : isMonthly
+          ? monthlyTracker.markCompleted(habitId)
+          : dailyTracker.markCompleted(habitId);
+
       if (marked) {
-        // Award more XP for weekly habits
-        const xp = isWeekly ? 75 : 25;
+        // Compute new streak first so XP scales by streak (1.25x per consecutive event)
+        const newStreak = isWeekly
+          ? weeklyTracker.getStreak(habitId)
+          : isMonthly
+            ? monthlyTracker.getStreak(habitId)
+            : dailyTracker.getStreak(habitId);
+
+        // Base XP: daily 25, weekly 150, monthly 500; scaled by 1.25^(streak-1)
+        const base = isMonthly ? 500 : isWeekly ? 150 : 25;
+        const multiplier = Math.pow(1.25, Math.max(newStreak - 1, 0));
+        const xp = Math.round(base * multiplier);
         await enhancedApi.addXP(xp);
 
-        // Update streak in UI (based on tracker used)
+        // Update streak in UI
         setHabits(prev => prev.map(h =>
-          h.id === habitId
-            ? { ...h, current_streak: isWeekly ? weeklyTracker.getStreak(habitId) : dailyTracker.getStreak(habitId) }
-            : h
+          h.id === habitId ? { ...h, current_streak: newStreak } : h
         ));
 
         // Refresh profile to update XP/level without reloading
@@ -174,11 +192,12 @@ const Dashboard: React.FC = () => {
     );
   }
 
-  const completedToday = habits.filter(h =>
-    (h.suggested_frequency || '').toLowerCase() === 'weekly'
-      ? weeklyTracker.isCompletedThisWeek(h.id)
-      : dailyTracker.isCompletedToday(h.id)
-  ).length;
+  const completedToday = habits.filter(h => {
+    const freq = (h.suggested_frequency || '').toLowerCase();
+    if (freq === 'weekly') return weeklyTracker.isCompletedThisWeek(h.id);
+    if (freq === 'monthly') return monthlyTracker.isCompletedThisMonth(h.id);
+    return dailyTracker.isCompletedToday(h.id);
+  }).length;
   const totalHabits = habits.length;
 
   return (
@@ -270,10 +289,24 @@ const Dashboard: React.FC = () => {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {habits.map(habit => {
-                const isWeekly = (habit.suggested_frequency || '').toLowerCase() === 'weekly';
-                const isCompleted = isWeekly ? weeklyTracker.isCompletedThisWeek(habit.id) : dailyTracker.isCompletedToday(habit.id);
-                const currentStreak = isWeekly ? weeklyTracker.getStreak(habit.id) : dailyTracker.getStreak(habit.id);
-                const completionRate = isWeekly ? weeklyTracker.getCompletionRate(habit.id, 12) : dailyTracker.getCompletionRate(habit.id);
+                const freq = (habit.suggested_frequency || '').toLowerCase();
+                const isWeekly = freq === 'weekly';
+                const isMonthly = freq === 'monthly';
+                const isCompleted = isWeekly
+                  ? weeklyTracker.isCompletedThisWeek(habit.id)
+                  : isMonthly
+                    ? monthlyTracker.isCompletedThisMonth(habit.id)
+                    : dailyTracker.isCompletedToday(habit.id);
+                const currentStreak = isWeekly
+                  ? weeklyTracker.getStreak(habit.id)
+                  : isMonthly
+                    ? monthlyTracker.getStreak(habit.id)
+                    : dailyTracker.getStreak(habit.id);
+                const completionRate = isWeekly
+                  ? weeklyTracker.getCompletionRate(habit.id, 12)
+                  : isMonthly
+                    ? monthlyTracker.getCompletionRate(habit.id, 12)
+                    : dailyTracker.getCompletionRate(habit.id);
                 
                 return (
                   <div
@@ -388,10 +421,10 @@ const Dashboard: React.FC = () => {
                         <Button
                           text={
                             isCompleted 
-                              ? "Completed Today ✓" 
+                              ? (freq === 'weekly' ? 'Completed This Week ✓' : freq === 'monthly' ? 'Completed This Month ✓' : 'Completed Today ✓')
                               : completingHabit === habit.id 
-                                ? "Completing..." 
-                                : "Complete Quest"
+                                ? 'Completing...'
+                                : 'Complete Quest'
                           }
                           onClick={() => handleCompleteHabit(habit)}
                           variant={isCompleted ? "secondary" : "primary"}
