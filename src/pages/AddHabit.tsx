@@ -91,7 +91,7 @@ const AddHabit: React.FC = () => {
           {/* Habit Icon Selection */}
           <div className="mb-6">
             <label className="block font-cinzel font-semibold text-midnight-blue mb-3">
-              Choose Your Symbol
+              Choose Your Theme
             </label>
             <div className="grid grid-cols-5 gap-3">
               {habitIcons.map(icon => (

@@ -78,16 +78,16 @@ const Dashboard: React.FC = () => {
         <div 
           className="h-64 bg-cover bg-center relative"
           style={{
-            backgroundImage: `linear-gradient(rgba(59, 130, 246, 0.8), rgba(37, 99, 235, 0.8)), url('https://images.pexels.com/photos/8828489/pexels-photo-8828489.jpeg?auto=compress&cs=tinysrgb&w=1200')`
+            backgroundImage: `url('public/images/hipparchus.jpg')`
           }}
         >
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="text-center text-white">
               <h1 className="font-cinzel font-bold text-4xl mb-4">
-                Welcome, Divine Warrior
+                Welcome to Your Metis Dashboard
               </h1>
               <p className="font-inter text-xl opacity-90">
-                Your journey to wisdom continues
+                What needs to be done today?
               </p>
             </div>
           </div>

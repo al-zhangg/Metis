@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BookOpen, Feather, Sparkles } from 'lucide-react';
 import Button from '../components/Button';
+import SideImage from '../components/SideImage';
 import AIInsightCard from '../components/AIInsightCard';
 import { enhancedApi } from '../services/enhancedApi';
 import type { JournalEntry } from '../services/supabaseClient';
@@ -83,11 +84,15 @@ const Journal: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-marble to-amber-50 p-6">
+      {/* Decorative side images (large screens) */}
+  <SideImage src="/images/image.png" side="left" decorative />
+  <SideImage src="/images/column1.png" side="right" decorative className="bottom-0 right-6 top-auto" />
+
       <div className="max-w-4xl mx-auto">
         <div className="mb-8">
           <h1 className="font-cinzel font-bold text-3xl text-midnight-blue flex items-center gap-3">
             <BookOpen className="w-8 h-8 text-bronze" />
-            Oracle's Journal
+            Journal
           </h1>
           <p className="font-inter text-gray-600 mt-2">
             Record your thoughts and receive divine wisdom
@@ -100,7 +105,7 @@ const Journal: React.FC = () => {
             <div className="mb-4">
               <label htmlFor="entry" className="block font-cinzel font-semibold text-midnight-blue mb-3 flex items-center gap-2">
                 <Feather className="w-5 h-5" />
-                Share Your Wisdom
+                Share Your Reflections
               </label>
               <textarea
                 id="entry"
@@ -129,7 +134,9 @@ const Journal: React.FC = () => {
           </h2>
           {entries.length === 0 ? (
             <div className="text-center py-12">
-              <div className="text-6xl mb-4">📜</div>
+              <div className="mb-4">
+                <img src="/images/image3.png" alt="empty journal" className="mx-auto w-24 h-24 object-contain" />
+              </div>
               <p className="font-inter text-gray-600">
                 No entries yet. Begin your journey of self-reflection.
               </p>
@@ -141,7 +148,7 @@ const Journal: React.FC = () => {
                   key={entry.id}
                   className={`
                     relative p-6 rounded-xl border-2 shadow-lg transform transition-all duration-300
-                    hover:scale-102 hover:shadow-xl ${getSentimentColor(entry.sentiment)}
+                    hover:scale-102 hover:shadow-xl ${getSentimentColor((entry as any).sentiment)}
                   `}
                   style={{
                     backgroundImage: `
@@ -153,7 +160,7 @@ const Journal: React.FC = () => {
                   {/* Oracle card header */}
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
-                      <span className="text-2xl">{getSentimentEmoji(entry.mood)}</span>
+                      <span className="text-2xl">{getSentimentEmoji(entry.mood ?? '')}</span>
                       <h3 className="font-cinzel font-semibold text-lg text-midnight-blue">
                         {entry.oracle_title}
                       </h3>
