@@ -111,7 +111,6 @@ const AddHabit: React.FC = () => {
             Forge a New Habit
           </h1>
           <p className="font-inter text-gray-600 mt-2">
-            Create a new path to wisdom and self-improvement
           </p>
         </div>
 
