@@ -83,12 +83,22 @@ const Journal: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-marble to-amber-50 p-6">
+    <div 
+      className="min-h-screen p-6 relative"
+      style={{
+        backgroundImage: 'url(/images/greece.png)',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat'
+      }}
+    >
       {/* Decorative side images (large screens) */}
-  <SideImage src="/images/image.png" side="left" decorative position="absolute" />
-  <SideImage src="/images/column1.png" side="right" decorative position="absolute" className="bottom-0 right-4 top-auto" />
+      <SideImage src="/images/image.png" side="left" decorative position="absolute" className="-z-10" />
+      <SideImage src="/images/column1.png" side="right" decorative position="absolute" className="bottom-0 right-4 top-auto -z-10" />
+      {/* Strong white tint overlay for better readability */}
+      <div className="absolute inset-0 bg-white/70 z-0"></div>
 
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-4xl mx-auto relative z-10">
         <div className="mb-8">
           <h1 className="font-cinzel font-bold text-3xl text-midnight-blue flex items-center gap-3">
             <BookOpen className="w-8 h-8 text-bronze" />
@@ -100,7 +110,7 @@ const Journal: React.FC = () => {
         </div>
 
         {/* Journal Entry Form */}
-        <div className="bg-white rounded-xl shadow-lg p-6 border-2 border-bronze/20 mb-8">
+        <div className="rounded-xl shadow-lg p-6 border-2 border-bronze/20 mb-8" style={{ backgroundColor: '#F6F2E9' }}>
           <form onSubmit={handleSubmit}>
             <div className="mb-4">
               <label htmlFor="entry" className="block font-cinzel font-semibold text-midnight-blue mb-3 flex items-center gap-2">
@@ -113,6 +123,7 @@ const Journal: React.FC = () => {
                 onChange={(e) => setNewEntry(e.target.value)}
                 rows={4}
                 className="w-full px-4 py-3 border-2 border-bronze/20 rounded-lg focus:border-bronze focus:ring-2 focus:ring-bronze/20 font-inter resize-none"
+                style={{ backgroundColor: '#F6F2E9' }}
                 placeholder="What insights did you gain today? What challenges did you face? How did you grow as a person?"
               />
             </div>
