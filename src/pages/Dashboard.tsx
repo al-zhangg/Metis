@@ -178,9 +178,9 @@ const Dashboard: React.FC = () => {
       {/* Hero Section */}
       <div className="relative overflow-hidden">
         <div 
-          className="h-64 bg-cover bg-center relative"
+          className="h-64 bg-cover bg-[position:10_100%] relative"
           style={{
-            backgroundImage: `url('public/images/hipparchus.jpg')`
+            backgroundImage: `url('public/images/Ancient_Rome.jpeg')`
           }}
         >
           <div className="absolute inset-0 flex items-center justify-center">
