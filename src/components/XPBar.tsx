@@ -9,8 +9,10 @@ interface XPBarProps {
 }
 
 const XPBar: React.FC<XPBarProps> = ({ currentXP, maxXP, level, className = '' }) => {
-  const percentage = Math.min((currentXP / maxXP) * 100, 100);
-  const nextLevelXP = maxXP - currentXP;
+  // Treat currentXP as cumulative XP; compute within-level progress
+  const xpIntoLevel = currentXP % maxXP;
+  const percentage = Math.min((xpIntoLevel / maxXP) * 100, 100);
+  const nextLevelXP = Math.max(maxXP - xpIntoLevel, 0);
 
   return (
     <div className={`bg-white/80 backdrop-blur-sm rounded-xl p-6 border border-aegean-blue/20 shadow-lg ${className}`}>
@@ -31,7 +33,7 @@ const XPBar: React.FC<XPBarProps> = ({ currentXP, maxXP, level, className = '' }
         </div>
         <div className="text-right">
           <p className="font-inter font-semibold text-midnight">
-            {currentXP.toLocaleString()} XP
+            {xpIntoLevel.toLocaleString()} / {maxXP.toLocaleString()} XP
           </p>
           <p className="font-inter text-sm text-storm-gray">
             {nextLevelXP.toLocaleString()} to next level

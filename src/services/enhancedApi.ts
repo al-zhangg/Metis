@@ -84,7 +84,7 @@ class EnhancedApiService {
   }
 
   private getCurrentUserId(): string | null {
-    return this.currentUser?.sub || null;
+    return this.currentUser?.sub || this.currentUser?.id || null;
   }
 
   // Build a user-specific storage key for habits
@@ -98,7 +98,7 @@ class EnhancedApiService {
   }
 
   private getCurrentUserName(): string | null {
-    return this.currentUser?.name || this.currentUser?.email?.split('@')[0] || 'User';
+    return this.currentUser?.name || this.currentUser?.username || this.currentUser?.email?.split('@')[0] || 'User';
   }
 
   setCurrentUser(user: any) {
