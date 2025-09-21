@@ -16,6 +16,7 @@ const Dashboard: React.FC = () => {
   const [quests, setQuests] = useState<Quest[]>([]);
   const [loading, setLoading] = useState(true);
   const [completingHabit, setCompletingHabit] = useState<number | null>(null);
+  const [deletingHabit, setDeletingHabit] = useState<number | null>(null);
   const [completingQuest, setCompletingQuest] = useState<number | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
 
@@ -107,6 +108,27 @@ const Dashboard: React.FC = () => {
       console.error('Failed to complete habit:', error);
     } finally {
       setCompletingHabit(null);
+    }
+  };
+
+  const handleDeleteHabit = async (habitId: number) => {
+    if (!confirm('Delete this habit? This cannot be undone.')) return;
+    setDeletingHabit(habitId);
+    try {
+      const result = await enhancedApi.deleteHabit(habitId);
+      if (result.success) {
+        // refresh habits and profile
+        const newHabits = await enhancedApi.getHabits();
+        setHabits(newHabits);
+        const updatedProfile = await enhancedApi.getUserProfile();
+        setProfile(updatedProfile);
+      } else {
+        console.error('Failed to delete habit:', result.error);
+      }
+    } catch (error) {
+      console.error('Error deleting habit:', error);
+    } finally {
+      setDeletingHabit(null);
     }
   };
 
@@ -339,19 +361,28 @@ const Dashboard: React.FC = () => {
                       </div>
                       
                       {/* Action button */}
-                      <Button
-                        text={
-                          isCompleted 
-                            ? "Completed Today ✓" 
-                            : completingHabit === habit.id 
-                              ? "Completing..." 
-                              : "Complete Quest"
-                        }
-                        onClick={() => handleCompleteHabit(habit.id)}
-                        variant={isCompleted ? "secondary" : "primary"}
-                        disabled={isCompleted || completingHabit === habit.id}
-                        className="w-full"
-                      />
+                      <div className="flex gap-3">
+                        <Button
+                          text={
+                            isCompleted 
+                              ? "Completed Today ✓" 
+                              : completingHabit === habit.id 
+                                ? "Completing..." 
+                                : "Complete Quest"
+                          }
+                          onClick={() => handleCompleteHabit(habit.id)}
+                          variant={isCompleted ? "secondary" : "primary"}
+                          disabled={isCompleted || completingHabit === habit.id}
+                          className="flex-1"
+                        />
+                        <Button
+                          text={deletingHabit === habit.id ? 'Deleting...' : 'Delete'}
+                          onClick={() => handleDeleteHabit(habit.id)}
+                          variant="secondary"
+                          disabled={deletingHabit === habit.id}
+                          className="bg-red-600 text-white hover:bg-red-700"
+                        />
+                      </div>
                       
                       {/* Progress Analysis */}
                       {currentStreak >= 3 && (

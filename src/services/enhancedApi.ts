@@ -54,7 +54,7 @@ class EnhancedApiService {
   const key = this.makeHabitsKey();
   localStorage.setItem(key, JSON.stringify(this.habits));
   // Debug: show exact key and serialized length to help trace persistence
-  console.log(`Saved habits to storage (${key}): count=${this.habits.length}, bytes=${new Blob([JSON.stringify(this.habits)]).size}`);
+  console.debug('[enhancedApi] Saved habits to storage', { key, count: this.habits.length, bytes: new Blob([JSON.stringify(this.habits)]).size });
     } catch (error) {
       console.error('Error saving habits to storage:', error);
     }
@@ -265,64 +265,23 @@ class EnhancedApiService {
 
           if (error) {
             // Don't let Supabase schema issues stop local fallback
-            console.warn('Supabase habit fetch error, falling back to local storage:', error);
+      console.warn('[enhancedApi] Supabase habit fetch error, falling back to local storage:', error);
           } else if (data) {
-            return data || [];
+      console.debug('[enhancedApi] Supabase returned habits count=', (data || []).length);
+      return data || [];
           }
         } catch (err) {
-          console.warn('Unexpected Supabase error fetching habits, falling back to local storage:', err);
+      console.warn('[enhancedApi] Unexpected Supabase error fetching habits, falling back to local storage:', err);
         }
       }
       
       // Load from localStorage first
-      this.loadHabitsFromStorage();
-      
-      // If no habits in storage, initialize with defaults
-      if (this.habits.length === 0) {
-        console.log('No habits found, initializing with defaults');
-        // Initialize with default examples for first-time users
-        this.habits = [
-          {
-            id: 1,
-            user_id: userId || 'anonymous',
-            title: "Morning Meditation",
-            description: "Find inner peace like the ancient philosophers",
-            icon: "🧘‍♂️",
-            category: "mindfulness",
-            difficulty: "easy",
-            suggested_frequency: "daily",
-            mythic_title: "Path of the Serene Oracle",
-            wisdom: "In stillness, wisdom speaks loudest.",
-            current_streak: 7,
-            completion_rate: 85,
-            status: "active",
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          },
-          {
-            id: 2,
-            user_id: userId || 'anonymous',
-            title: "Physical Training",
-            description: "Strengthen body and mind like Spartan warriors",
-            icon: "💪",
-            category: "health",
-            difficulty: "medium",
-            suggested_frequency: "daily",
-            mythic_title: "Forge of the Titan",
-            wisdom: "Strength grows in the crucible of discipline.",
-            current_streak: 12,
-            completion_rate: 92,
-            status: "active",
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          }
-        ];
-        
-        // Save defaults to localStorage
-        this.saveHabitsToStorage();
-      }
-      
-      console.log('Returning habits:', this.habits);
+    this.loadHabitsFromStorage();
+    console.debug('[enhancedApi] Loaded local habits count=', this.habits.length);
+
+  // Do not auto-seed defaults here. Seeding occurs during profile creation (upsertUserProfile) only for brand-new accounts.
+
+    console.debug('[enhancedApi] Returning habits', { count: this.habits.length });
       return this.habits;
     } catch (error) {
       console.error('Error fetching habits:', error);
@@ -370,6 +329,45 @@ class EnhancedApiService {
     } catch (error) {
       console.error('Error completing habit:', error);
       return { success: false };
+    }
+  }
+
+  // Delete a habit by id (Supabase if configured, otherwise localStorage)
+  async deleteHabit(habitId: number): Promise<{ success: boolean; error?: string }> {
+    try {
+  const userId = this.getCurrentUserId();
+  console.debug('[enhancedApi] deleteHabit start', { habitId, userId });
+  if (!userId) return { success: false, error: 'No user' };
+
+      if (isSupabaseConfigured() && supabase) {
+        const { error } = await supabase.from('habits').delete().eq('id', habitId).eq('user_id', userId);
+        if (error) {
+      console.warn('[enhancedApi] Supabase habit delete error:', error);
+          // Fall back to local removal
+        } else {
+          // Dispatch update event so UI can refresh
+      try { window.dispatchEvent(new CustomEvent('metis:habits-updated', { detail: { userId } })); } catch (e) {}
+      console.debug('[enhancedApi] Supabase delete succeeded for habitId=', habitId);
+      return { success: true };
+        }
+      }
+
+      // Local deletion fallback
+    this.loadHabitsFromStorage();
+    const before = this.habits.length;
+    this.habits = this.habits.filter(h => h.id !== habitId);
+    const after = this.habits.length;
+    console.debug('[enhancedApi] Local delete before/after counts', { before, after });
+    if (before === after) return { success: false, error: 'Habit not found' };
+    this.saveHabitsToStorage();
+    // notify listeners
+    try { this.habitsListeners.forEach(fn => fn(this.habits)); } catch (e) { console.warn(e); }
+    try { window.dispatchEvent(new CustomEvent('metis:habits-updated', { detail: { userId } })); } catch (e) {}
+    console.debug('[enhancedApi] Local delete succeeded for habitId=', habitId);
+    return { success: true };
+    } catch (error) {
+      console.error('Error deleting habit:', error);
+      return { success: false, error: 'Failed to delete habit' };
     }
   }
 
@@ -649,6 +647,37 @@ class EnhancedApiService {
       const userId = profile.id || this.getCurrentUserId();
       if (!userId) throw new Error('No user id for profile');
 
+      // Detect whether a profile already existed to avoid seeding defaults for existing accounts
+      let hadProfile = false;
+      if (isSupabaseConfigured() && supabase) {
+        try {
+          const { data, error } = await supabase
+            .from('user_profiles')
+            .select('id')
+            .eq('id', userId)
+            .single();
+          if (error) {
+            // PGRST116 = not found; treat as no profile
+            if ((error as any).code === 'PGRST116') {
+              hadProfile = false;
+            } else {
+              // On unexpected errors, assume profile exists to avoid accidental seeding
+              console.warn('Supabase profile lookup error, skipping seeding to be safe:', error);
+              hadProfile = true;
+            }
+          } else if (data) {
+            hadProfile = true;
+          }
+        } catch (e) {
+          console.warn('Supabase profile check threw; assume profile exists to avoid seeding:', e);
+          hadProfile = true;
+        }
+      } else {
+        hadProfile = !!this.loadProfileFromStorage();
+      }
+
+      // Perform upsert (Supabase preferred)
+      let savedProfile: UserProfile | null = null;
       if (isSupabaseConfigured() && supabase) {
         try {
           const { data, error } = await supabase
@@ -656,20 +685,77 @@ class EnhancedApiService {
             .upsert(profile, { onConflict: 'id' })
             .select()
             .single();
-
-          if (error) throw error;
-          this.saveProfileToStorage(data);
-          return data;
+          if (error) {
+            console.warn('Supabase upsert error, falling back to local save:', error);
+            this.saveProfileToStorage(profile);
+            savedProfile = profile;
+          } else {
+            this.saveProfileToStorage(data);
+            savedProfile = data;
+          }
         } catch (err) {
-          console.warn('Supabase upsert failed, falling back to localStorage:', err);
+          console.warn('Supabase upsert threw, falling back to localStorage:', err);
           this.saveProfileToStorage(profile);
-          return profile;
+          savedProfile = profile;
+        }
+      } else {
+        // Local fallback
+        this.saveProfileToStorage(profile);
+        savedProfile = profile;
+      }
+
+      // Only seed default habits when there was NO prior profile (brand-new account)
+      if (!hadProfile) {
+        try {
+          this.loadHabitsFromStorage();
+          const existing = this.habits;
+          if (!existing || existing.length === 0) {
+            // Seed two example habits for truly new users
+            this.habits = [
+              {
+                id: Date.now() + 1,
+                user_id: userId,
+                title: 'Morning Meditation',
+                description: 'Find inner peace like the ancient philosophers',
+                icon: '🧘‍♂️',
+                category: 'mindfulness',
+                difficulty: 'easy',
+                suggested_frequency: 'daily',
+                mythic_title: 'Path of the Serene Oracle',
+                wisdom: 'In stillness, wisdom speaks loudest.',
+                current_streak: 0,
+                completion_rate: 0,
+                status: 'active',
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+              },
+              {
+                id: Date.now() + 2,
+                user_id: userId,
+                title: 'Physical Training',
+                description: 'Strengthen body and mind like Spartan warriors',
+                icon: '💪',
+                category: 'health',
+                difficulty: 'medium',
+                suggested_frequency: 'daily',
+                mythic_title: 'Forge of the Titan',
+                wisdom: 'Strength grows in the crucible of discipline.',
+                current_streak: 0,
+                completion_rate: 0,
+                status: 'active',
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+              }
+            ];
+            this.saveHabitsToStorage();
+            try { window.dispatchEvent(new CustomEvent('metis:habits-updated', { detail: { userId } })); } catch (e) {}
+          }
+        } catch (e) {
+          console.warn('Seeding defaults failed:', e);
         }
       }
 
-      // Local fallback
-      this.saveProfileToStorage(profile);
-      return profile;
+      return savedProfile as UserProfile;
     } catch (error) {
       console.error('Error upserting profile:', error);
       throw error;
