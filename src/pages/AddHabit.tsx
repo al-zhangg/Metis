@@ -90,19 +90,27 @@ const AddHabit: React.FC = () => {
     }
   };
   return (
-    <div className="min-h-screen bg-gradient-to-br from-marble to-amber-50 p-6 relative">
+    <div 
+      className="min-h-screen p-6 relative"
+      style={{
+        backgroundImage: 'url(/images/starrysky.png)',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat'
+      }}
+    >
       {/* Constellation decorations moved to the page edges so they don't overlap the form */}
-      <SideImage src="/images/constellation1.jpg" side="left" decorative position="absolute" className="top-8 left-0 -translate-x-4 pointer-events-none -z-10" />
-      <SideImage src="/images/constellation2.png" side="right" decorative position="absolute" className="bottom-8 right-0 translate-x-8 pointer-events-none -z-10" />
+      <SideImage src="/images/constellation2.png" side="right" decorative position="absolute" className="bottom-0 right-0 translate-x-8 pointer-events-none -z-10" />
+      {/* Strong white tint overlay for better readability */}
+      <div className="absolute inset-0 bg-white/70 z-0"></div>
       {/* make the inner container relative for any inner absolute positioning */}
-      <div className="max-w-2xl mx-auto relative">
+      <div className="max-w-2xl mx-auto relative z-10">
         <div className="mb-8">
           <h1 className="font-cinzel font-bold text-3xl text-midnight-blue flex items-center gap-3">
             <Plus className="w-8 h-8 text-bronze" />
             Forge a New Habit
           </h1>
           <p className="font-inter text-gray-600 mt-2">
-            Create a new path to wisdom and self-improvement
           </p>
         </div>
 
