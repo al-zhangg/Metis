@@ -14,7 +14,7 @@ const AddHabit: React.FC = () => {
     goal: '',
     category: '',
     description: '',
-    icon: 'muscle'
+    icon: 'book'
   });
   const [showModal, setShowModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -26,7 +26,7 @@ const AddHabit: React.FC = () => {
   ];
 
   const habitIcons = [
-    'muscle', 'plant', 'music', 'paint', 'runn', 'book', 'drop', 'apple', 'write', 'croslegg'
+    'book', 'croslegg', 'muscle', 'runn', 'paint', 'plant', 'drop', 'apple', 'write', 'music'
   ];
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -62,7 +62,7 @@ const AddHabit: React.FC = () => {
           goal: '',
           category: '',
           description: '',
-          icon: 'muscle'
+          icon: 'book'
         });
         setShowPreview(false);
         setAiClassification(null);
