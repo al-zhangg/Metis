@@ -284,8 +284,20 @@ const Dashboard: React.FC = () => {
 
                     {/* Card header */}
                     <div className="flex items-start gap-4 mb-4">
-                      <div className="text-3xl animate-float">
-                        {habit.icon}
+                      <div className="flex-shrink-0 p-2 rounded-lg bg-white/50 border border-gray-200">
+                        <img 
+                          src={`/images/${habit.icon}.png`} 
+                          alt={habit.icon}
+                          className="w-8 h-8 object-cover"
+                          onError={(e) => {
+                            // Fallback to text if image fails to load
+                            e.currentTarget.style.display = 'none';
+                            const textFallback = document.createElement('span');
+                            textFallback.textContent = habit.icon;
+                            textFallback.className = 'text-2xl';
+                            e.currentTarget.parentNode?.appendChild(textFallback);
+                          }}
+                        />
                       </div>
                       <div className="flex-1">
                         <h3 className="font-cinzel font-semibold text-lg text-midnight mb-2">
