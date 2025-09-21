@@ -31,6 +31,62 @@ class AIService {
     this.apiKey = import.meta.env.VITE_AI_API_KEY || '';
   }
 
+  // Varied fallback for habit classification so titles/wisdom don't repeat
+  private generateHabitClassificationFallback(title: string, description: string, salt: string = ''): HabitClassification {
+    const basis = `${title}\n${description}\n${salt}`;
+    const hash = this.stringHash(basis);
+    const pick = <T>(arr: T[], offset: number = 0) => arr[(hash + offset) % arr.length];
+
+    const lower = `${title} ${description}`.toLowerCase();
+
+    const categories = ['health','mindfulness','productivity','learning','social','creative','personal_growth'] as const;
+    let category: HabitClassification['category'] = 'personal_growth';
+    if (/(run|gym|walk|exercise|yoga|meditat|sleep|diet|water|hydrate|health)/.test(lower)) category = 'health';
+    else if (/(meditat|mindful|breathe|reflect|journal|gratitude)/.test(lower)) category = 'mindfulness';
+    else if (/(learn|study|read|course|class|practice)/.test(lower)) category = 'learning';
+    else if (/(draw|paint|music|write|create|art)/.test(lower)) category = 'creative';
+    else if (/(friend|family|call|social)/.test(lower)) category = 'social';
+    else if (/(task|todo|focus|deep work|clean|organize|plan)/.test(lower)) category = 'productivity';
+    else category = pick([...categories]);
+
+    const difficultyPool: HabitClassification['difficulty'][] = ['easy','medium','hard'];
+    let difficulty: HabitClassification['difficulty'] = pick(difficultyPool);
+    if (/(daily|every day|morning|night)/.test(lower)) difficulty = 'easy';
+    if (/(marathon|advanced|intense|hard)/.test(lower)) difficulty = 'hard';
+
+    const freqPool = ['daily','weekly','monthly'];
+    let suggestedFrequency = pick(freqPool);
+    if (/(daily|every day)/.test(lower)) suggestedFrequency = 'daily';
+    else if (/(weekly|once a week)/.test(lower)) suggestedFrequency = 'weekly';
+    else if (/(monthly|once a month)/.test(lower)) suggestedFrequency = 'monthly';
+
+    const titlePool = [
+      'Path of the Steadfast Artisan',
+      'Forge of the Quiet Mind',
+      'Trail of the Dawn Runner',
+      'Codex of the Patient Scholar',
+      'Rite of the Gentle Titan',
+      'Candle of Focused Hours',
+      'Chorus of the Creative Muse',
+      'Way of the Small Victories',
+    ];
+    const wisdomPool = [
+      'Small constellations of effort chart the brightest skies.',
+      'Ritual turns will into motion; begin and the path appears.',
+      'The mountain moves for the one who returns each day.',
+      'Pages become chapters; chapters become change.',
+      'Strength is the echo of repeated choices.',
+      'Guard one hour; it will guard your destiny.',
+      'A single line, drawn daily, sketches a new life.',
+      'The hero’s pace is steady; let time be your ally.',
+    ];
+
+    const mythicTitle = pick(titlePool, 1);
+    const wisdom = pick(wisdomPool, 3);
+
+    return { category, difficulty, suggestedFrequency, mythicTitle, wisdom };
+  }
+
   // Deterministic fallback generator for journal analysis so Oracle's Wisdom varies per entry
   private generateJournalFallback(entry: string, salt: string = ''): JournalAnalysis {
     const hash = this.stringHash(entry + '|' + salt);
@@ -162,13 +218,13 @@ class AIService {
 
   private getFallbackResponse(prompt: string): string {
     if (prompt.includes('classify habit')) {
-      return JSON.stringify({
-        category: 'personal_growth',
-        difficulty: 'medium',
-        suggestedFrequency: 'daily',
-        mythicTitle: 'Path of the Determined Hero',
-        wisdom: 'Every great journey begins with a single step.'
-      });
+      // Extract title/description for varied fallback
+      const titleMatch = /Title:\s*([^\n]*)/i.exec(prompt);
+      const descMatch = /Description:\s*([\s\S]*)\n\nPlease respond/i.exec(prompt);
+      const title = (titleMatch?.[1] || 'Untitled Habit').trim();
+      const description = (descMatch?.[1] || '').trim();
+      const fc = this.generateHabitClassificationFallback(title, description, new Date().toISOString());
+      return JSON.stringify(fc);
     } else if (prompt.includes('analyze journal')) {
       // Best effort: try to extract the entry from the prompt for variability
       const m = /Entry:\s*([\s\S]*)\n\nPlease respond/.exec(prompt);
@@ -209,23 +265,31 @@ Respond only with valid JSON.`;
 
       const response = await this.makeAIRequest(prompt);
       const parsed = typeof response === 'string' ? JSON.parse(response) : response;
-      
-      return {
-        category: parsed.category || 'personal_growth',
-        difficulty: parsed.difficulty || 'medium',
-        suggestedFrequency: parsed.suggestedFrequency || 'daily',
-        mythicTitle: parsed.mythicTitle || 'Path of the Determined Hero',
-        wisdom: parsed.wisdom || 'Every great journey begins with a single step.'
+      // Blend with varied fallback to prevent generic repetition
+      const variant = this.generateHabitClassificationFallback(title, description, new Date().toISOString());
+
+      const normalize = (s?: string) => (s || '').toLowerCase().replace(/\s+/g, ' ').trim();
+      const defaultTitle = 'Path of the Determined Hero';
+      const defaultWisdom = 'Every great journey begins with a single step.';
+      const isGenericTitle = (s?: string) => {
+        const n = normalize(s);
+        return !n || n === normalize(defaultTitle) || n.includes('determined hero');
       };
+      const isGenericWisdom = (s?: string) => {
+        const n = normalize(s);
+        return !n || n === normalize(defaultWisdom) || n.length < 20;
+      };
+
+      const category = parsed.category || variant.category || 'personal_growth';
+      const difficulty: HabitClassification['difficulty'] = parsed.difficulty || variant.difficulty || 'medium';
+      const suggestedFrequency = parsed.suggestedFrequency || variant.suggestedFrequency || 'daily';
+      const mythicTitle = !isGenericTitle(parsed.mythicTitle) ? parsed.mythicTitle : variant.mythicTitle;
+      const wisdom = !isGenericWisdom(parsed.wisdom) ? parsed.wisdom : variant.wisdom;
+
+      return { category, difficulty, suggestedFrequency, mythicTitle, wisdom };
     } catch (error) {
       console.error('Error classifying habit:', error);
-      return {
-        category: 'personal_growth',
-        difficulty: 'medium',
-        suggestedFrequency: 'daily',
-        mythicTitle: 'Path of the Determined Hero',
-        wisdom: 'Every great journey begins with a single step.'
-      };
+      return this.generateHabitClassificationFallback(title, description, new Date().toISOString());
     }
   }
 
