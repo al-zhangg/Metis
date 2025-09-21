@@ -323,9 +323,15 @@ const AuthProviderContent: React.FC<{
         returnTo: window.location.origin 
       } 
     });
+    // Clear local auth state but preserve per-user app data in localStorage
     setUser(null);
     setError(null);
-    localStorage.clear();
+    // Tell enhanced API there is no current user (it will switch to anonymous cache)
+    try {
+      enhancedApi.setCurrentUser(null);
+    } catch (err) {
+      console.warn('Failed to clear enhancedApi user on logout:', err);
+    }
   };
 
   return (
