@@ -390,9 +390,8 @@ const Dashboard: React.FC = () => {
                         <Button
                           text={deletingHabit === habit.id ? 'Deleting...' : 'Delete'}
                           onClick={() => handleDeleteHabit(habit.id)}
-                          variant="secondary"
+                          variant="danger"
                           disabled={deletingHabit === habit.id}
-                          className="bg-red-600 text-white hover:bg-red-700"
                         />
                       </div>
                       
