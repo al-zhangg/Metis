@@ -12,10 +12,33 @@ class EnhancedApiService {
   // Load habits from localStorage
   private loadHabitsFromStorage(): void {
     try {
-      const stored = localStorage.getItem('metis_habits');
+      const key = this.makeHabitsKey();
+      const stored = localStorage.getItem(key);
       if (stored) {
         this.habits = JSON.parse(stored);
-        console.log('Loaded habits from storage:', this.habits);
+        console.log(`Loaded habits from storage (${key}):`, this.habits);
+      } else {
+        // If nothing saved for this user, attempt to migrate legacy global storage
+        const legacy = localStorage.getItem('metis_habits');
+        if (legacy) {
+          try {
+            const legacyHabits = JSON.parse(legacy);
+            // Filter or reassign user_id to current user
+            const userId = this.getCurrentUserId() || 'anonymous';
+            const migrated = Array.isArray(legacyHabits)
+              ? legacyHabits.map((h: any, idx: number) => ({ ...h, user_id: userId, id: h.id || Date.now() + idx }))
+              : [];
+            this.habits = migrated;
+            // Persist under the new per-user key
+            localStorage.setItem(key, JSON.stringify(this.habits));
+            console.log(`Migrated legacy habits into (${key}): count=${this.habits.length}`);
+          } catch (e) {
+            console.warn('Failed to migrate legacy habits:', e);
+            this.habits = [];
+          }
+        } else {
+          this.habits = [];
+        }
       }
     } catch (error) {
       console.error('Error loading habits from storage:', error);
@@ -26,8 +49,10 @@ class EnhancedApiService {
   // Save habits to localStorage
   private saveHabitsToStorage(): void {
     try {
-      localStorage.setItem('metis_habits', JSON.stringify(this.habits));
-      console.log('Saved habits to storage:', this.habits);
+  const key = this.makeHabitsKey();
+  localStorage.setItem(key, JSON.stringify(this.habits));
+  // Debug: show exact key and serialized length to help trace persistence
+  console.log(`Saved habits to storage (${key}): count=${this.habits.length}, bytes=${new Blob([JSON.stringify(this.habits)]).size}`);
     } catch (error) {
       console.error('Error saving habits to storage:', error);
     }
@@ -62,6 +87,12 @@ class EnhancedApiService {
     return this.currentUser?.sub || this.currentUser?.id || null;
   }
 
+  // Build a user-specific storage key for habits
+  private makeHabitsKey(): string {
+    const userId = this.getCurrentUserId() || 'anonymous';
+    return `metis_habits_${userId}`;
+  }
+
   private getCurrentUserEmail(): string | null {
     return this.currentUser?.email || null;
   }
@@ -73,6 +104,12 @@ class EnhancedApiService {
   setCurrentUser(user: any) {
     this.currentUser = user;
     console.log('Enhanced API: Current user set:', user?.sub);
+    // Load habits for the newly-set user into the in-memory cache
+    try {
+      this.loadHabitsFromStorage();
+    } catch (e) {
+      console.warn('Failed to load habits for new user:', e);
+    }
   }
 
   // Habit Management with AI Classification
@@ -126,8 +163,8 @@ class EnhancedApiService {
       
       // Mock response for development
       const mockHabit: Habit = {
+        ...(newHabit as Habit),
         id: Date.now(),
-        ...newHabit as Habit
       };
 
       // Add to local habits array
@@ -300,8 +337,8 @@ class EnhancedApiService {
       
       // Mock response for development
       const mockEntry: JournalEntry = {
+        ...(newEntry as JournalEntry),
         id: Date.now(),
-        ...newEntry as JournalEntry
       };
 
       console.log('Using mock journal entry:', mockEntry);
