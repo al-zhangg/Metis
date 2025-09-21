@@ -14,7 +14,7 @@ const AddHabit: React.FC = () => {
     goal: '',
     category: '',
     description: '',
-    icon: '📚'
+    icon: 'muscle'
   });
   const [showModal, setShowModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -26,7 +26,7 @@ const AddHabit: React.FC = () => {
   ];
 
   const habitIcons = [
-    '📚', '🧘‍♂️', '💪', '🏃‍♂️', '🎨', '🌱', '💧', '🍎', '✍️', '🎵'
+    'muscle', 'plant', 'music', 'paint', 'runn', 'book', 'drop', 'apple', 'write', 'croslegg'
   ];
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -62,7 +62,7 @@ const AddHabit: React.FC = () => {
           goal: '',
           category: '',
           description: '',
-          icon: '📚'
+          icon: 'muscle'
         });
         setShowPreview(false);
         setAiClassification(null);
@@ -138,15 +138,19 @@ const AddHabit: React.FC = () => {
                   type="button"
                   onClick={() => setFormData(prev => ({ ...prev, icon }))}
                   className={`
-                    p-3 text-2xl rounded-lg border-2 transition-all duration-200
-                    hover:scale-110 active:scale-95
+                    p-3 rounded-lg border-2 transition-all duration-200
+                    hover:scale-110 active:scale-95 h-16 w-16 flex items-center justify-center
                     ${formData.icon === icon 
                       ? 'border-bronze bg-bronze/10' 
                       : 'border-gray-200 hover:border-bronze/50'
                     }
                   `}
                 >
-                  {icon}
+                  <img 
+                    src={`/images/${icon}.png`} 
+                    alt={icon}
+                    className="w-10 h-10 object-cover"
+                  />
                 </button>
               ))}
             </div>
@@ -288,7 +292,13 @@ const AddHabit: React.FC = () => {
           title="Habit Created Successfully!"
         >
           <div className="text-center">
-            <div className="text-6xl mb-4">{formData.icon}</div>
+            <div className="mb-4 flex justify-center">
+              <img 
+                src={`/images/${formData.icon}.png`} 
+                alt={formData.icon}
+                className="w-16 h-16 object-contain"
+              />
+            </div>
             {aiClassification && (
               <div className="mb-4">
                 <h4 className="font-cinzel font-semibold text-bronze mb-2">
